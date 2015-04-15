@@ -1,5 +1,9 @@
-/**
- * Created by ashansa on 4/15/15.
- */
 public class RstsManager {
+
+    AppiaManager appiaManager;
+
+    public RstsManager() {
+        appiaManager = new AppiaManager();
+        appiaManager.initAppia();
+    }
 }
