@@ -1,37 +1,84 @@
-import net.sf.appia.core.*;
-import net.sf.appia.protocols.fifo.FifoLayer;
-import net.sf.appia.protocols.group.sync.VSyncLayer;
+import net.sf.appia.jgcs.AppiaGroup;
+import net.sf.appia.jgcs.AppiaProtocolFactory;
+import net.sf.appia.jgcs.AppiaService;
+import net.sf.jgcs.*;
+import net.sf.jgcs.membership.BlockListener;
+import net.sf.jgcs.membership.MembershipListener;
+
+import java.net.SocketAddress;
 
 /**
  * Created by ashansa on 4/15/15.
  */
-public class AppiaManager {
+public class AppiaManager implements ControlListener, ExceptionListener,
+        MembershipListener, BlockListener {
 
-    public void initAppia() {
+    public static void main(String args[]) throws Exception {
         /* Create layers and put them in a array */
-        Layer[] qos = { new VSyncLayer(), new FifoLayer()};
+        ProtocolFactory pf = new AppiaProtocolFactory();
+        AppiaGroup g = new AppiaGroup();
+        g.setGroupName("group");
+        g.setConfigFileName(args[0]);
+        Protocol p = pf.createProtocol();
+        DataSession session = p.openDataSession(g);
+        ControlSession control = p.openControlSession(g);
+        Service sc = new AppiaService("rrpc");
+        Service sg = new AppiaService("rrpc_group");
+        AppiaManager test = new AppiaManager(control, session, sc, sg);
+        ////test.run();
+    }
 
-		/* Create a QoS */
-        QoS myQoS = null;
-        try {
-            myQoS = new QoS("Print stack", qos);
-        } catch (AppiaInvalidQoSException ex) {
-            System.err.println("Invalid QoS");
-            System.err.println(ex.getMessage());
-            System.exit(1);
-        }
+    public AppiaManager(ControlSession controlSession, DataSession dataSession, Service clientService,
+                        Service groupService) {
+        /*this.control = control;
+        this.groupSession = grSession;
+        this.clients = cl;
+        this.group = gr;
 
-		/* Create a channel. Uses default event scheduler. */
-        Channel channel = myQoS.createUnboundChannel("Print Channel");
-        try {
-            channel.start();
-        } catch (AppiaDuplicatedSessionsException ex) {
-            System.err.println("Error in starting the channel");
-            System.exit(1);
-        }
+        // set listeners
+        GroupMessageListener l = new GroupMessageListener();
+        groupSession.setMessageListener(l);
+        groupSession.setServiceListener(l);
+        control.setControlListener(this);
+        control.setExceptionListener(this);
+        if (control instanceof MembershipSession)
+            ((MembershipSession) control).setMembershipListener(this);
+        if (control instanceof BlockSession)
+            ((BlockSession) control).setBlockListener(this);*/
+    }
 
-		/* All set. Appia main class will handle the rest */
-        System.out.println("Starting Appia...");
-        Appia.run();
+    @Override
+    public void onBlock() {
+
+    }
+
+    @Override
+    public void onJoin(SocketAddress socketAddress) {
+
+    }
+
+    @Override
+    public void onLeave(SocketAddress socketAddress) {
+
+    }
+
+    @Override
+    public void onFailed(SocketAddress socketAddress) {
+
+    }
+
+    @Override
+    public void onException(JGCSException e) {
+
+    }
+
+    @Override
+    public void onMembershipChange() {
+
+    }
+
+    @Override
+    public void onExcluded() {
+
     }
 }
