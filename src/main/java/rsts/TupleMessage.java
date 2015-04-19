@@ -4,16 +4,15 @@ import tfsd.ProtocolMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
-/**
- * Created by ashansa on 4/16/15.
- */
-public class TupleMessage extends ProtocolMessage {
+public class TupleMessage extends ProtocolMessage implements Serializable {
 
     private int id;
     private String value1;
     private String value2;
     private String value3;
+    TupleManager.QueryType type;
 
     /*public TupleMessage(Tuple tuple, int id) {
         super();
@@ -21,12 +20,14 @@ public class TupleMessage extends ProtocolMessage {
         this.tuple = tuple;
     }*/
 
-    public TupleMessage(String value1, String value2, String value3, int id) {
+    public TupleMessage(String value1, String value2, String value3, TupleManager.QueryType type, int id) {
         super();
         this.id = id;
         this.value1 = value1;
         this.value2 = value2;
         this.value3 = value3;
+        this.type = type;
+
     }
 
     public TupleMessage(byte[] buf) throws IOException{
@@ -39,6 +40,7 @@ public class TupleMessage extends ProtocolMessage {
         os.writeUTF(value1);
         os.writeUTF(value2);
         os.writeUTF(value3);
+        os.writeObject(type);
     }
 
     @Override
@@ -47,6 +49,7 @@ public class TupleMessage extends ProtocolMessage {
         value1 = is.readUTF();
         value2 = is.readUTF();
         value3 = is.readUTF();
+        type = (TupleManager.QueryType) is.readObject();
 
     }
 
@@ -56,5 +59,9 @@ public class TupleMessage extends ProtocolMessage {
 
     public int getId() {
         return id;
+    }
+
+    public TupleManager.QueryType getType() {
+        return type;
     }
 }

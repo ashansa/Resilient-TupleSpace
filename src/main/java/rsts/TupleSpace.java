@@ -28,4 +28,9 @@ public class TupleSpace {
         }
         return match;
     }
+
+    //TODO temp method......
+    public int tupleSize() {
+        return tuples.size();
+    }
 }

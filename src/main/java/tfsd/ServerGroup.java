@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Hashtable;
 
+import rsts.Tuple;
 import rsts.TupleMessage;
 import rsts.TupleSpace;
 import tfsd.Constants.MessageType;
@@ -58,7 +59,7 @@ import net.sf.jgcs.membership.MembershipSession;
  * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
  * @version 1.0
  */
-public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
+public class ServerGroup implements ControlListener, ExceptionListener,
 		MembershipListener, BlockListener {
 
 	private long viewChangeTime = 0;
@@ -102,13 +103,6 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 				return null;
 			}
 
-			// If if is a server message
-			if (protoMsg instanceof ClientMessage) {
-				// System.out.println("#################### CLIENT \n");
-				handleClientMessage((ClientMessage) protoMsg,
-						msg.getSenderAddress());
-				return null;
-			}
 			// If if is a client message
 			else if (protoMsg instanceof ServerMessage) {
 				// System.out.println("#################### SERVER \n");
@@ -130,7 +124,7 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 		}
 
 		private void handleTupleMessage(TupleMessage msg, SocketAddress addr) {
-			
+			//TupleMessage
 			try {
 				msg.unmarshal();
 				Message groupMsg = null;
@@ -140,7 +134,7 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
                 }
                 System.out.println();
                 groupMsg = groupSession.createMessage();
-				ServerMessage serverMsg = new ServerMessage(msg.getId(), addr);
+				ServerMessage serverMsg = new ServerMessage(msg.getId(), addr, msg);
 
 				serverMsg.marshal();
 				byte[] bytes = Constants.createMessageToSend(
@@ -160,60 +154,47 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 			}
 		}
 
-        private void handleClientMessage(ClientMessage msg, SocketAddress addr) {
-
-			try {
-				msg.unmarshal();
-				Message groupMsg = null;
-				System.out.println("\tReceived message from client with id: " + msg.id);
-				groupMsg = groupSession.createMessage();
-				ServerMessage serverMsg = new ServerMessage(msg.id, addr);
-
-				serverMsg.marshal();
-				byte[] bytes = Constants.createMessageToSend(
-						MessageType.SERVER, serverMsg.getByteArray());
-				groupMsg.setPayload(bytes);
-
-				times.put(msg.id, System.nanoTime());
-				// System.out.println("added time for message #" + msg.id);
-
-				// forward message to the servers, using the "group" Service
-				//System.out.println("multicasting message to the group");
-				groupSession.multicast(groupMsg, group, null);
-			}
-
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-
         //////////TODO......... change this...
 		private void handleServerMessage(ServerMessage smsg, SocketAddress addr) {
 			try {
 				smsg.unmarshal();
-
+                TupleMessage tupleMessage = smsg.tupleMessage;
 				if (addr.equals(control.getLocalAddress())) {
 					//long deltaT = System.nanoTime() - times.remove(smsg.id);
 					System.out.println("\tReceived server message with id: " + smsg.id + " (I'm the origin)");
-					Message climsg = groupSession.createMessage();
+                    System.out.println("tuple msg type in server msg: " + tupleMessage.getType());
+                  /*  Message climsg = groupSession.createMessage();
 					ClientMessage myMsg = new ClientMessage(smsg.id);
 					myMsg.marshal();
 					byte[] bytes = Constants.createMessageToSend(
 							MessageType.CLIENT, myMsg.getByteArray());
 					climsg.setPayload(bytes);
-					groupSession.send(climsg, clients, null, smsg.addr);
+					groupSession.send(climsg, clients, null, smsg.addr);*/
 				}
 				else{
 					System.out.println("\tReceived server message with id: " + smsg.id);
 				}
+
+                String[] tupleValues = tupleMessage.getValues();
+                switch (tupleMessage.getType()) {
+                    case WRITE:
+                        tupleSpace.write(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
+                        break;
+                    case READ:
+                        break;
+                    case TAKE:
+                        break;
+                }
+                System.out.println("current tuple size: " + tupleSpace.tupleSize());
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 	} // end of class GroupMessageListener
 
-	public ServerOpenGroupTest(ControlSession control, DataSession grSession,
-			Service cl, Service gr) throws JGCSException {
+	public ServerGroup(ControlSession control, DataSession grSession,
+                       Service cl, Service gr) throws JGCSException {
 		this.control = control;
 		this.groupSession = grSession;
 		this.clients = cl;
@@ -308,7 +289,7 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 			Service sc = new AppiaService("rrpc");
 			Service sg = new AppiaService("rrpc_group");
 
-			ServerOpenGroupTest test = new ServerOpenGroupTest(control,
+			ServerGroup test = new ServerGroup(control,
 					session, sc, sg);
 			test.run();
 		} catch (Exception e) {

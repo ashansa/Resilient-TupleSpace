@@ -1,5 +1,7 @@
 package tfsd;
 
+import rsts.TupleMessage;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -9,14 +11,16 @@ public class ServerMessage extends ProtocolMessage {
 
     int id;
     SocketAddress addr;
+    TupleMessage tupleMessage;
     
     public ServerMessage(byte[] buf) throws IOException{
         super(buf);
     }
     
-    public ServerMessage(int id, SocketAddress addr){
+    public ServerMessage(int id, SocketAddress addr, TupleMessage tupleMessage){
         this.id = id;
         this.addr = addr;
+        this.tupleMessage = tupleMessage;
     }
     
     @Override
@@ -24,12 +28,14 @@ public class ServerMessage extends ProtocolMessage {
             ClassNotFoundException {
         id = is.readInt();
         addr = (SocketAddress) is.readObject();
+        tupleMessage = (TupleMessage)is.readObject();
     }
 
     @Override
     public void writeUserData(ObjectOutputStream os) throws IOException {
         os.writeInt(id);
         os.writeObject(addr);
+        os.writeObject(tupleMessage);
     }
 
 }
