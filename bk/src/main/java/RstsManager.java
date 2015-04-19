@@ -3,7 +3,7 @@ public class RstsManager {
     AppiaManager appiaManager;
 
     public RstsManager() {
-        appiaManager = new AppiaManager();
-        appiaManager.initAppia();
+        /*appiaManager = new AppiaManager();
+        appiaManager.initAppia();*/
     }
 }

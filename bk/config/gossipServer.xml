@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE appia PUBLIC "-//DTDName//DTD//EN"
-        "http://appia.di.fc.ul.pt/xml/3.2.1/appiaxml.dtd">
+"http://appia.di.fc.ul.pt/xml/3.2.1/appiaxml.dtd">
 <appia>
     <template name="Gossip Group Template">
         <session name="udp" sharing="private">
@@ -17,7 +17,7 @@
         </session>
         <session name="suspectl" sharing="private">
             <protocol>net.sf.appia.protocols.group.suspect.SuspectLayer</protocol>
-        </session>
+        </session>		
         <session name="intral" sharing="private">
             <protocol>net.sf.appia.protocols.group.intra.IntraLayer</protocol>
         </session>

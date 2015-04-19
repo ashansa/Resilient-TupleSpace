@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE appia PUBLIC "-//DTDName//DTD//EN"
-        "http://appia.di.fc.ul.pt/xml/3.2/appiaxml.dtd">
+"http://appia.di.fc.ul.pt/xml/3.2/appiaxml.dtd">
 
 <appia>
-
     <template name="tcp_total">
         <session name="TCPSession" sharing="global">
             <protocol>net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
@@ -53,14 +52,14 @@
     </template>
 
     <channel name="rrpc_group" template="tcp_total" initialized="no">
-        <memorymanagement size="40000000" up_threshold="15000000" down_threshold="7000000"/>
+        <memorymanagement size="40000000" up_threshold="15000000" down_threshold="7000000" />
         <chsession name="atsl">
-            <parameter name="gossip_address">194.210.231.86:10000</parameter>
+            <parameter name="gossip_address">192.168.1.186:10000</parameter>
         </chsession>
     </channel>
 
     <channel name="rrpc" template="tcp" initialized="no">
-        <memorymanagement size="40000000" up_threshold="15000000" down_threshold="7000000"/>
+        <memorymanagement size="40000000" up_threshold="15000000" down_threshold="7000000" />
         <chsession name="atsl">
         </chsession>
     </channel>
