@@ -1,6 +1,6 @@
-package tfsd;
+package org.ist;
 
-import rsts.TupleMessage;
+import org.ist.tuple.TupleMessage;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;

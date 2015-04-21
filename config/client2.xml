@@ -21,7 +21,7 @@
     <channel name="rrpc" template="tcp" initialized="no">
         <memorymanagement size="40000000" up_threshold="15000000" down_threshold="7000000" />
         <chsession name="remoteview">
-            <parameter name="gossip">192.168.1.186:10000</parameter>
+            <parameter name="gossip">192.168.1.183:10000</parameter>
         </chsession>
         <chsession name="remoteaddr">
             <parameter name="group">group</parameter>

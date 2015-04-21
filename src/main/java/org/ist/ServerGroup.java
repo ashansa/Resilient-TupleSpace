@@ -17,36 +17,23 @@
  * Developer(s): Nuno Carvalho.
  */
 
-package tfsd;
-
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.util.Hashtable;
-
-import rsts.Tuple;
-import rsts.TupleMessage;
-import rsts.TupleSpace;
-import tfsd.Constants.MessageType;
+package org.ist;
 
 import net.sf.appia.jgcs.AppiaGroup;
 import net.sf.appia.jgcs.AppiaProtocolFactory;
 import net.sf.appia.jgcs.AppiaService;
-import net.sf.jgcs.ControlListener;
-import net.sf.jgcs.ControlSession;
-import net.sf.jgcs.DataSession;
-import net.sf.jgcs.ExceptionListener;
-import net.sf.jgcs.JGCSException;
-import net.sf.jgcs.Message;
-import net.sf.jgcs.MessageListener;
-import net.sf.jgcs.NotJoinedException;
-import net.sf.jgcs.Protocol;
-import net.sf.jgcs.ProtocolFactory;
-import net.sf.jgcs.Service;
-import net.sf.jgcs.ServiceListener;
+import net.sf.jgcs.*;
 import net.sf.jgcs.membership.BlockListener;
 import net.sf.jgcs.membership.BlockSession;
 import net.sf.jgcs.membership.MembershipListener;
 import net.sf.jgcs.membership.MembershipSession;
+import org.ist.tuple.Tuple;
+import org.ist.tuple.TupleMessage;
+import org.ist.tuple.TupleSpace;
+
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.util.Hashtable;
 
 /**
  * This class defines a ServerOpenGroupTest. This example shows how to use and
@@ -137,7 +124,7 @@ public class ServerGroup implements ControlListener, ExceptionListener,
 
 				serverMsg.marshal();
 				byte[] bytes = Constants.createMessageToSend(
-						MessageType.SERVER, serverMsg.getByteArray());
+						Constants.MessageType.SERVER, serverMsg.getByteArray());
 				groupMsg.setPayload(bytes);
 
 				times.put(msg.getId(), System.nanoTime());

@@ -1,3 +1,5 @@
+package org.ist.tuple;
+
 import java.util.Vector;
 
 /**
@@ -25,5 +27,10 @@ public class TupleSpace {
             tuples.remove(template);
         }
         return match;
+    }
+
+    //TODO temp method......
+    public int tupleSize() {
+        return tuples.size();
     }
 }

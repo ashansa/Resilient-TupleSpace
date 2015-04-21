@@ -17,30 +17,20 @@
  * Developer(s): Nuno Carvalho.
  */
 
-package tfsd;
+package org.ist;
+
+import net.sf.appia.jgcs.AppiaGroup;
+import net.sf.appia.jgcs.AppiaProtocolFactory;
+import net.sf.appia.jgcs.AppiaService;
+import net.sf.jgcs.*;
+import org.ist.tuple.Tuple;
+import org.ist.tuple.TupleManager;
+import org.ist.tuple.TupleMessage;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.SocketAddress;
-
-import rsts.Tuple;
-import rsts.TupleMessage;
-import tfsd.Constants.MessageType;
-
-import net.sf.appia.jgcs.AppiaGroup;
-import net.sf.appia.jgcs.AppiaProtocolFactory;
-import net.sf.appia.jgcs.AppiaService;
-import net.sf.jgcs.ControlSession;
-import net.sf.jgcs.DataSession;
-import net.sf.jgcs.ExceptionListener;
-import net.sf.jgcs.JGCSException;
-import net.sf.jgcs.Message;
-import net.sf.jgcs.MessageListener;
-import net.sf.jgcs.Protocol;
-import net.sf.jgcs.ProtocolFactory;
-import net.sf.jgcs.Service;
-import net.sf.jgcs.UnsupportedServiceException;
 
 /**
  * 
@@ -55,20 +45,18 @@ import net.sf.jgcs.UnsupportedServiceException;
  * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
  * @version 1.0
  */
-public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
+public class ClientGroup implements MessageListener, ExceptionListener {
 
-	private static final int MAX_MESSAGES = 2;
 
 	// only the data session is used
 	private DataSession data;
 	private ControlSession control;
 	private Service rpcService;
-	private long tInit = 0;
 	private int id = 0;
 	private int lastReceivedMessage = -1;
 
-	public ClientOpenGroupTest(DataSession data, ControlSession control,
-			Service serviceVSC) {
+	public ClientGroup(DataSession data, ControlSession control,
+                       Service serviceVSC) {
 		this.data = data;
 		this.rpcService = serviceVSC;
 		this.control = control;
@@ -76,36 +64,19 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 
 	// messages are received here.
 	public Object onMessage(Message msg) {
-		boolean canSend = false;
-		/*try {
-			ClientMessage cliMsg = (ClientMessage) Constants
-					.createMessageInstance(msg.getPayload());
-			cliMsg.unmarshal();
-			if (cliMsg.id > lastReceivedMessage) {
-				lastReceivedMessage = cliMsg.id;
-				canSend = true;
-			}
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-        */
         try {
-			rsts.TupleMessage tupleMsg = (rsts.TupleMessage) Constants
+			TupleMessage tupleMsg = (TupleMessage) Constants
 					.createMessageInstance(msg.getPayload());
 			tupleMsg.unmarshal();
 			if (tupleMsg.getId() > lastReceivedMessage) {
 				lastReceivedMessage = tupleMsg.getId();
-				canSend = true;
 			}
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		//long deltaT = System.nanoTime() - tInit;
-		//System.out.println("Received message from " + msg.getSenderAddress());
+		System.out.println("Received message from " + msg.getSenderAddress());
 
 		return null;
 	}
@@ -127,27 +98,17 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 		arg0.printStackTrace();
 	}
 
-	private void sendMessage() throws UnsupportedServiceException, IOException {
-		Message m = data.createMessage();
-		ClientMessage climsg = new ClientMessage(id++);
-		climsg.marshal();
-		byte[] bytes = Constants.createMessageToSend(MessageType.CLIENT,
-				climsg.getByteArray());
-		m.setPayload(bytes);
-
-		tInit = System.nanoTime();
-		System.out.println("sending message with id: " + (id - 1));
-		data.send(m, rpcService, null, null);
-	}
-
-    private void sendMessage(String value1, String value2, String value3) throws IOException {
+    private void sendMessage(String value1, String value2, String value3, TupleManager.QueryType type) throws IOException {
         Message msg = data.createMessage();
-        //rsts.TupleMessage tupleMessage = new rsts.TupleMessage(new Tuple(value1, value2, value3), id++);
-        TupleMessage tupleMessage = new TupleMessage(value1, value2, value3, id++);
+        TupleMessage tupleMessage = new TupleMessage(id++, type, new Tuple(value1, value2, value3));
         tupleMessage.marshal();
-        byte[] bytes = Constants.createMessageToSend(MessageType.TUPLE, tupleMessage.getByteArray());
+        byte[] bytes = Constants.createMessageToSend(Constants.MessageType.TUPLE, tupleMessage.getByteArray());
         msg.setPayload(bytes);
         data.send(msg, rpcService, null, null);
+    }
+
+    public void sendWriteMessage(String value1, String value2, String value3) throws IOException {
+        sendMessage(value1, value2, value3, TupleManager.QueryType.WRITE);
     }
 
 	public void run() throws Exception {
@@ -160,15 +121,11 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 					System.in));
 			
 			System.out.print("> ");
-			
 			line = br.readLine();
-//line = "aa,sd,aew";
 			if (line.contains(",")){
 				System.out.println("Sending message");
-
                 String[] values = line.split(",");
-//                sendMessage();
-                sendMessage(values[0], values[1], values[2]);
+                sendWriteMessage(values[0], values[1], values[2]);
 			}
 
 		}
@@ -195,7 +152,7 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 			DataSession session = p.openDataSession(g);
 			ControlSession control = p.openControlSession(g);
 			Service service = new AppiaService("rrpc");
-			ClientOpenGroupTest test = new ClientOpenGroupTest(session,
+			ClientGroup test = new ClientGroup(session,
 					control, service);
 
 			session.setMessageListener(test);

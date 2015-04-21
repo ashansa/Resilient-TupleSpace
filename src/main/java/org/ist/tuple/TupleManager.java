@@ -1,4 +1,4 @@
-package rsts;
+package org.ist.tuple;
 
 public class TupleManager {
 

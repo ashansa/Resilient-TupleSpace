@@ -1,7 +1,6 @@
-package rsts;
+package org.ist.tuple;
 
 import java.io.Serializable;
-import java.util.Vector;
 
 public class Tuple implements Serializable{
 

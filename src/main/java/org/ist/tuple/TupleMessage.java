@@ -1,6 +1,6 @@
-package rsts;
+package org.ist.tuple;
 
-import tfsd.ProtocolMessage;
+import org.ist.ProtocolMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
