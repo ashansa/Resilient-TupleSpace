@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.SocketAddress;
 
+import rsts.Tuple;
 import rsts.TupleManager;
 import rsts.TupleMessage;
 import tfsd.Constants.MessageType;
@@ -110,7 +111,7 @@ public class ClientGroup implements MessageListener, ExceptionListener {
 
     private void sendMessage(String value1, String value2, String value3, TupleManager.QueryType type) throws IOException {
         Message msg = data.createMessage();
-        TupleMessage tupleMessage = new TupleMessage(value1, value2, value3, type, id++);
+        TupleMessage tupleMessage = new TupleMessage(id++, type, new Tuple(value1, value2, value3));
         tupleMessage.marshal();
         byte[] bytes = Constants.createMessageToSend(MessageType.TUPLE, tupleMessage.getByteArray());
         msg.setPayload(bytes);

@@ -97,7 +97,6 @@ public class ServerGroup implements ControlListener, ExceptionListener,
 				return null;
 
 			if (protoMsg instanceof TupleMessage) {
-				// System.out.println("#################### CLIENT \n");
 				handleTupleMessage((TupleMessage) protoMsg,
 						msg.getSenderAddress());
 				return null;
@@ -105,7 +104,6 @@ public class ServerGroup implements ControlListener, ExceptionListener,
 
 			// If if is a client message
 			else if (protoMsg instanceof ServerMessage) {
-				// System.out.println("#################### SERVER \n");
 				handleServerMessage((ServerMessage) protoMsg,
 						msg.getSenderAddress());
 				return null;
@@ -128,9 +126,10 @@ public class ServerGroup implements ControlListener, ExceptionListener,
 			try {
 				msg.unmarshal();
 				Message groupMsg = null;
-				System.out.print("\tReceived a tuple msg: ");
-                for (String value : msg.getValues()) {
-                    System.out.print(value + " ");
+				System.out.println("\tReceived a tuple msg: ");
+
+                for (String value : msg.getTuple().getValues()) {
+                    System.out.println("tuple val: " + value);
                 }
                 System.out.println();
                 groupMsg = groupSession.createMessage();
@@ -154,28 +153,19 @@ public class ServerGroup implements ControlListener, ExceptionListener,
 			}
 		}
 
-        //////////TODO......... change this...
 		private void handleServerMessage(ServerMessage smsg, SocketAddress addr) {
 			try {
 				smsg.unmarshal();
                 TupleMessage tupleMessage = smsg.tupleMessage;
 				if (addr.equals(control.getLocalAddress())) {
-					//long deltaT = System.nanoTime() - times.remove(smsg.id);
 					System.out.println("\tReceived server message with id: " + smsg.id + " (I'm the origin)");
                     System.out.println("tuple msg type in server msg: " + tupleMessage.getType());
-                  /*  Message climsg = groupSession.createMessage();
-					ClientMessage myMsg = new ClientMessage(smsg.id);
-					myMsg.marshal();
-					byte[] bytes = Constants.createMessageToSend(
-							MessageType.CLIENT, myMsg.getByteArray());
-					climsg.setPayload(bytes);
-					groupSession.send(climsg, clients, null, smsg.addr);*/
 				}
 				else{
 					System.out.println("\tReceived server message with id: " + smsg.id);
 				}
 
-                String[] tupleValues = tupleMessage.getValues();
+                String[] tupleValues = tupleMessage.getTuple().getValues();
                 switch (tupleMessage.getType()) {
                     case WRITE:
                         tupleSpace.write(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
