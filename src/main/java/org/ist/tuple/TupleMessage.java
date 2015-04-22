@@ -10,9 +10,9 @@ public class TupleMessage extends ProtocolMessage implements Serializable {
 
     private int id;
     private Tuple tuple;
-    TupleManager.QueryType type;
+    Type type;
 
-    public TupleMessage(int id, TupleManager.QueryType type, Tuple tuple) {
+    public TupleMessage(int id, Tuple tuple, Type type) {
         super();
         this.id = id;
         this.type = type;
@@ -33,7 +33,7 @@ public class TupleMessage extends ProtocolMessage implements Serializable {
     @Override
     public void readUserData(ObjectInputStream is) throws IOException, ClassNotFoundException {
         id=is.readInt();
-        type = (TupleManager.QueryType) is.readObject();
+        type = (Type) is.readObject();
         tuple = (Tuple) is.readObject();
 
     }
@@ -42,7 +42,7 @@ public class TupleMessage extends ProtocolMessage implements Serializable {
         return id;
     }
 
-    public TupleManager.QueryType getType() {
+    public Type getType() {
         return type;
     }
 
