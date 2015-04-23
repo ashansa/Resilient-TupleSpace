@@ -1,4 +1,4 @@
-package org.ist.tuple;
+package org.ist.rsts.tuple;
 
 import java.io.Serializable;
 

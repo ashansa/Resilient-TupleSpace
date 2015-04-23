@@ -17,7 +17,7 @@
  * Developer(s): Nuno Carvalho.
  */
 
-package org.ist;
+package org.ist.rsts;
 
 import net.sf.appia.jgcs.AppiaGroup;
 import net.sf.appia.jgcs.AppiaProtocolFactory;
@@ -27,10 +27,10 @@ import net.sf.jgcs.membership.BlockListener;
 import net.sf.jgcs.membership.BlockSession;
 import net.sf.jgcs.membership.MembershipListener;
 import net.sf.jgcs.membership.MembershipSession;
-import org.ist.tuple.Tuple;
-import org.ist.tuple.TupleMessage;
-import org.ist.tuple.TupleSpace;
-import org.ist.tuple.Type;
+import org.ist.rsts.tuple.Tuple;
+import org.ist.rsts.tuple.TupleMessage;
+import org.ist.rsts.tuple.TupleSpace;
+import org.ist.rsts.tuple.Type;
 
 import java.io.IOException;
 import java.net.SocketAddress;

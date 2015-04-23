@@ -1,6 +1,6 @@
-package org.ist.tuple;
+package org.ist.rsts.tuple;
 
-import org.ist.ProtocolMessage;
+import org.ist.rsts.ProtocolMessage;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;

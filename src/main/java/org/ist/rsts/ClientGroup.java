@@ -17,15 +17,15 @@
  * Developer(s): Nuno Carvalho.
  */
 
-package org.ist;
+package org.ist.rsts;
 
 import net.sf.appia.jgcs.AppiaGroup;
 import net.sf.appia.jgcs.AppiaProtocolFactory;
 import net.sf.appia.jgcs.AppiaService;
 import net.sf.jgcs.*;
-import org.ist.tuple.Tuple;
-import org.ist.tuple.TupleMessage;
-import org.ist.tuple.Type;
+import org.ist.rsts.tuple.Tuple;
+import org.ist.rsts.tuple.TupleMessage;
+import org.ist.rsts.tuple.Type;
 
 import java.io.BufferedReader;
 import java.io.IOException;

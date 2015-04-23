@@ -36,7 +36,7 @@
     </target>
 
     <target name="runClient1" depends="compile">
-        <java classname="org.ist.ClientGroup" fork="true">
+        <java classname="org.ist.rsts.ClientGroup" fork="true">
             <arg value="config/client1.xml"/>
             <classpath>
                 <pathelement path="${build}"/>
@@ -53,7 +53,7 @@
     </target>
 
     <target name="runClient2" depends="compile">
-        <java classname="org.ist.ClientGroup" fork="true">
+        <java classname="org.ist.rsts.ClientGroup" fork="true">
             <arg value="config/client2.xml"/>
             <classpath>
                 <pathelement path="${build}"/>
@@ -71,7 +71,7 @@
 
 
     <target name="runServer1" depends="compile">
-        <java classname="org.ist.ServerGroup" fork="true">
+        <java classname="org.ist.rsts.ServerGroup" fork="true">
             <arg value="config/server1.xml"/>
             <classpath>
                 <pathelement path="${build}"/>
@@ -88,7 +88,7 @@
     </target>
 
     <target name="runServer2" depends="compile">
-        <java classname="org.ist.ServerGroup" fork="true">
+        <java classname="org.ist.rsts.ServerGroup" fork="true">
             <arg value="config/server2.xml"/>
             <classpath>
                 <pathelement path="${build}"/>
@@ -105,7 +105,7 @@
     </target>
 
     <target name="runServer3" depends="compile">
-        <java classname="org.ist.ServerGroup" fork="true">
+        <java classname="org.ist.rsts.ServerGroup" fork="true">
             <arg value="config/server2.xml"/>
             <classpath>
                 <pathelement path="${build}"/>

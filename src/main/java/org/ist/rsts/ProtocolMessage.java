@@ -2,7 +2,7 @@
  * 
  */
 
-package org.ist;
+package org.ist.rsts;
 
 
 import java.io.ByteArrayInputStream;
