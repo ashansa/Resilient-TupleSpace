@@ -36,7 +36,7 @@
     </target>
 
     <target name="runClient1" depends="compile">
-        <java classname="org.ist.rsts.ClientGroup" fork="true">
+        <java classname="org.ist.rsts.Client" fork="true">
             <arg value="config/client1.xml"/>
             <classpath>
                 <pathelement path="${build}"/>
@@ -53,7 +53,7 @@
     </target>
 
     <target name="runClient2" depends="compile">
-        <java classname="org.ist.rsts.ClientGroup" fork="true">
+        <java classname="org.ist.rsts.Client" fork="true">
             <arg value="config/client2.xml"/>
             <classpath>
                 <pathelement path="${build}"/>

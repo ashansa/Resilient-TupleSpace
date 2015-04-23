@@ -55,23 +55,18 @@ public class ServerGroup implements ControlListener, ExceptionListener,
 
     private ControlSession control;
     private DataSession groupSession;
-    private Service clients, group;
-
+    private Service group;
     TupleSpace tupleSpace;
-
     private Hashtable<Integer, Long> times = new Hashtable<Integer, Long>();
+    Client client;
 
-
-    public ServerGroup(ControlSession control, DataSession grSession,
-                       Service cl, Service gr) throws JGCSException {
+    public ServerGroup(ControlSession control, DataSession grSession, Service gr) throws JGCSException {
         this.control = control;
         this.groupSession = grSession;
-        this.clients = cl;
         this.group = gr;
         this.tupleSpace = new TupleSpace();
 
         System.out.println("Group is " + gr);
-        System.out.println("Client is " + cl);
 
         // set listeners
         GroupMessageListener l = new GroupMessageListener();
@@ -84,6 +79,87 @@ public class ServerGroup implements ControlListener, ExceptionListener,
         if (control instanceof BlockSession)
             ((BlockSession) control).setBlockListener(this);
     }
+
+    public static void main(String[] args) {
+        if (args.length != 1) {
+            System.out.println("Must put the xml file name as an argument.");
+            System.exit(1);
+        }
+
+        try {
+
+            ProtocolFactory pf = new AppiaProtocolFactory();
+            AppiaGroup g = new AppiaGroup();
+            g.setGroupName("group");
+            g.setConfigFileName(args[0]);
+            Protocol p = pf.createProtocol();
+            DataSession session = p.openDataSession(g);
+            ControlSession control = p.openControlSession(g);
+            Service sg = new AppiaService("rrpc_group");
+
+            ServerGroup test = new ServerGroup(control, session, sg);
+            test.run();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void run() throws Exception {
+
+        //starting the client thread
+        client = new Client(this);
+        client.start();
+
+        // joins the group
+        control.join();
+
+        // wait forever.
+        Thread.sleep(Long.MAX_VALUE);
+    }
+
+    public void write(Tuple tuple) {
+        TupleMessage msg = new TupleMessage(tuple, Type.WRITE);
+        sendClientRequest(msg);
+    }
+
+    public void read(Tuple template) {
+        try {
+            String[] tupleValues = template.getValues();
+            Vector<Tuple> tuple = tupleSpace.read(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
+            if (tuple.size() > 0)
+                sendResultsToClient(tuple.firstElement());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void take(Tuple template) {
+        TupleMessage msg = new TupleMessage(template, Type.TAKE);
+        sendClientRequest(msg);
+    }
+
+    private void sendClientRequest(TupleMessage tupleMsg) {
+        try {
+            Message msg = groupSession.createMessage();
+            tupleMsg.marshal();
+            byte[] bytes = Constants.createMessageToSend(Constants.MessageType.TUPLE, tupleMsg.getByteArray());
+            msg.setPayload(bytes);
+            groupSession.send(msg, group, null, null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendResultsToClient(Tuple tuple) throws IOException {
+        client.receiveResults(tuple);
+        /*Message reply = groupSession.createMessage();
+        TupleMessage tupleMessage = new TupleMessage(tuple, Type.REPLY);
+        tupleMessage.marshal();
+        byte[] bytes = Constants.createMessageToSend(Constants.MessageType.TUPLE, tupleMessage.getByteArray());
+        reply.setPayload(bytes);
+        groupSession.send(reply, clients, null, serverMessage.addr);*/
+    }
+
 
     public void onJoin(SocketAddress peer) {
         System.out.println("-- JOIN: " + peer);
@@ -132,47 +208,11 @@ public class ServerGroup implements ControlListener, ExceptionListener,
         arg0.printStackTrace();
     }
 
-    public void run() throws Exception {
-        // joins the group
-        control.join();
-
-        // wait forever.
-        Thread.sleep(Long.MAX_VALUE);
-    }
-
-    public static void main(String[] args) {
-        if (args.length != 1) {
-            System.out.println("Must put the xml file name as an argument.");
-            System.exit(1);
-        }
-
-        try {
-            ProtocolFactory pf = new AppiaProtocolFactory();
-            AppiaGroup g = new AppiaGroup();
-            g.setGroupName("group");
-            g.setConfigFileName(args[0]);
-            Protocol p = pf.createProtocol();
-            DataSession session = p.openDataSession(g);
-            ControlSession control = p.openControlSession(g);
-
-            Service sc = new AppiaService("rrpc");
-            Service sg = new AppiaService("rrpc_group");
-
-            ServerGroup test = new ServerGroup(control,
-                    session, sc, sg);
-            test.run();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     /*
      * Class that implements a message listener
 	 */
     private class GroupMessageListener implements MessageListener,
             ServiceListener {
-
-        Service uniform = new AppiaService("uniform_total_order");
 
         /*
          * All messages arrive here. Messages can be sent from clients or
@@ -191,15 +231,16 @@ public class ServerGroup implements ControlListener, ExceptionListener,
                 return null;
 
             if (protoMsg instanceof TupleMessage) {
-                handleTupleMessage((TupleMessage) protoMsg,
-                        msg.getSenderAddress());
+                System.out.println("========tuple msg received OnMessage=======");
+                handleRquest((TupleMessage)protoMsg, msg.getSenderAddress());
                 return null;
             }
 
             // If if is a client message
             else if (protoMsg instanceof ServerMessage) {
-                handleServerMessage((ServerMessage) protoMsg,
-                        msg.getSenderAddress());
+                System.out.println("========server msg received OnMessage=======");
+                /*handleServerMessage((ServerMessage) protoMsg,
+                        msg.getSenderAddress());*/
                 return null;
             }
             return null;
@@ -215,59 +256,27 @@ public class ServerGroup implements ControlListener, ExceptionListener,
             // }
         }
 
-        private void handleTupleMessage(TupleMessage msg, SocketAddress addr) {
-            //TupleMessage
+        private void handleRquest(TupleMessage tupleMessage, SocketAddress addr) {
             try {
-                msg.unmarshal();
-                Message groupMsg = null;
-                System.out.println("\tReceived a tuple msg: ");
+                tupleMessage.unmarshal();
 
-                for (String value : msg.getTuple().getValues()) {
-                    System.out.println("tuple val: " + value);
-                }
-                System.out.println();
-                groupMsg = groupSession.createMessage();
-                ServerMessage serverMsg = new ServerMessage(msg.getId(), addr, msg);
-
-                serverMsg.marshal();
-                byte[] bytes = Constants.createMessageToSend(
-                        Constants.MessageType.SERVER, serverMsg.getByteArray());
-                groupMsg.setPayload(bytes);
-
-                times.put(msg.getId(), System.nanoTime());
-                // System.out.println("added time for message #" + msg.id);
-
-                // forward message to the servers, using the "group" Service
-                //System.out.println("multicasting message to the group");
-                groupSession.multicast(groupMsg, group, null);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        private void handleServerMessage(ServerMessage smsg, SocketAddress addr) {
-            try {
-                smsg.unmarshal();
-                TupleMessage tupleMessage = smsg.tupleMessage;
                 if (addr.equals(control.getLocalAddress())) {
-                    System.out.println("\tReceived server message with id: " + smsg.id + " (I'm the origin)");
-                    System.out.println("tuple msg type in server msg: " + tupleMessage.getType());
+                    System.out.println("\tReceived request message. I'm the origin)");
+                    System.out.println("tuple msg type in request : " + tupleMessage.getType());
                 } else {
-                    System.out.println("\tReceived server message with id: " + smsg.id);
+                    System.out.println("\tReceived request message");
                 }
+                System.out.println("Type: " + tupleMessage.getType());
 
                 String[] tupleValues = tupleMessage.getTuple().getValues();
                 switch (tupleMessage.getType()) {
                     case WRITE:
                         tupleSpace.write(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
                         break;
-                    case READ:
-                        Vector<Tuple> tuple = tupleSpace.read(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
-                        if (tuple.size() > 0)
-                            sendResultsToClient(smsg, tuple.firstElement());
-                        break;
                     case TAKE:
                         break;
+                    //case READ not needed
+                    // because read request can be served locally. So other servers will not get the read request
                 }
                 System.out.println("current tuple size: " + tupleSpace.tupleSize());
 
@@ -276,14 +285,5 @@ public class ServerGroup implements ControlListener, ExceptionListener,
             }
         }
     } // end of class GroupMessageListener
-
-    private void sendResultsToClient(ServerMessage serverMessage, Tuple tuple) throws IOException {
-        Message reply = groupSession.createMessage();
-        TupleMessage tupleMessage = new TupleMessage(serverMessage.id, tuple, Type.REPLY);
-        tupleMessage.marshal();
-        byte[] bytes = Constants.createMessageToSend(Constants.MessageType.TUPLE, tupleMessage.getByteArray());
-        reply.setPayload(bytes);
-        groupSession.send(reply, clients, null, serverMessage.addr);
-    }
 
 }
