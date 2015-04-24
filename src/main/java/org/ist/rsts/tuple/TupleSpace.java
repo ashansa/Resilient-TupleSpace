@@ -34,9 +34,7 @@ public class TupleSpace {
             if (!("*".equals(templateElements[2]) || tupleValues[2].equals(templateElements[2]))) {
                 continue;
             }
-
             matches.add(tuple);
-
         }
         //add matches to this
         return matches;

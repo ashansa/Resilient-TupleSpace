@@ -27,10 +27,7 @@ import net.sf.jgcs.membership.BlockListener;
 import net.sf.jgcs.membership.BlockSession;
 import net.sf.jgcs.membership.MembershipListener;
 import net.sf.jgcs.membership.MembershipSession;
-import org.ist.rsts.tuple.Tuple;
-import org.ist.rsts.tuple.TupleMessage;
-import org.ist.rsts.tuple.TupleSpace;
-import org.ist.rsts.tuple.Type;
+import org.ist.rsts.tuple.*;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -55,7 +52,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     private ControlSession control;
     private DataSession groupSession;
     private Service group;
-    TupleSpace tupleSpace;
+    //TupleSpace tupleSpace;
+    private TupleManager tupleManager;
     private Client client;
     ServerGroup test;
 
@@ -64,7 +62,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         this.control = control;
         this.groupSession = grSession;
         this.group = gr;
-        this.tupleSpace = new TupleSpace();
+        this.tupleManager = new TupleManager(this);
 
         System.out.println("Group is " + gr);
 
@@ -130,18 +128,16 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         sendClientRequest(msg);
     }
 
-    public void read(Tuple template) {
-        try {
-            String[] tupleValues = template.getValues();
-            Vector<Tuple> tuple = tupleSpace.read(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
-            if (tuple.size() > 0) {
-                sendResultsToClient(tuple.firstElement());
-                String[] result = tuple.firstElement().getValues();
-                System.out.println("result :" + result[0] + "," + result[1] + "," + result[2]);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+    public Tuple read(Tuple template) {
+
+        String[] tupleValues = template.getValues();
+        //read can be served locally without bcast request
+        Tuple tuple = tupleManager.readTuple(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
+        if (tuple != null) {
+            return tuple;
         }
+        return null;
+
     }
 
     public void take(Tuple template) {
@@ -161,8 +157,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         }
     }
 
-    private void sendResultsToClient(Tuple tuple) throws IOException {
-        getClient().receiveResults(tuple);
+    public void sendResultsNotificationToClient(Tuple tuple, Type type) throws IOException {
+        getClient().receiveResults(tuple, type);
         /*Message reply = groupSession.createMessage();
         TupleMessage tupleMessage = new TupleMessage(tuple, Type.REPLY);
         tupleMessage.marshal();
@@ -286,14 +282,13 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 String[] tupleValues = tupleMessage.getTuple().getValues();
                 switch (tupleMessage.getType()) {
                     case WRITE:
-                        tupleSpace.write(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
+                        tupleManager.writeTuple(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
                         break;
                     case TAKE:
                         break;
                     //case READ not needed
                     // because read request can be served locally. So other servers will not get the read request
                 }
-                System.out.println("current tuple size: " + tupleSpace.tupleSize());
 
             } catch (Exception e) {
                 e.printStackTrace();

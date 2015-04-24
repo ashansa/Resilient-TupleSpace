@@ -25,6 +25,9 @@ import org.ist.rsts.tuple.Type;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This class defines a ClientOpenGroupTest This example shows how to use and
@@ -43,6 +46,9 @@ public class Client extends Thread {
     private int id = 0;
     private int lastReceivedMessage = -1;
     private ServerGroup server;
+    private Lock lock = new ReentrantLock();
+    private Condition readBlock = lock.newCondition();
+    private Condition takeBlock = lock.newCondition();
 
     public Client(ServerGroup server) {
         this.server = server;
@@ -61,14 +67,40 @@ public class Client extends Thread {
         server.write(new Tuple(value1, value2, value3));
     }
 
-    public void sendReadRequest(String value1, String value2, String value3) throws IOException {
-        server.read(new Tuple(value1, value2, value3));
+    public void sendReadRequest(String value1, String value2, String value3) throws IOException, InterruptedException {
+        try{
+            lock.lock();
+            Tuple result = server.read(new Tuple(value1, value2, value3));
+            if(result == null) {
+                System.out.println("waiting..........");
+                readBlock.await();
+                System.out.println("wait finish.......");
+            } else {
+                String[] values = result.getValues();
+                System.out.println("result :" + values[0] + "," + values[1] + "," + values[2]);
+            }
+
+        } finally {
+            lock.unlock();
+        }
+
     }
 
-    public void receiveResults(Tuple result) {
+    public void receiveResults(Tuple result, Type type) {
         System.out.println("result received");
         for (String value : result.getValues()) {
             System.out.println(value);
+        }
+
+        if(Type.READ.equals(type)) {
+            try{
+                lock.lock();
+                readBlock.signal();
+                System.out.println("signaled......");
+            } finally {
+                lock.unlock();
+            }
+
         }
     }
 
@@ -97,7 +129,11 @@ public class Client extends Thread {
                     System.out.println("Sending tuple read request");
                     //splitting the line write:1,2,3
                     String[] values = line.split(":")[1].split(",");
-                    sendReadRequest(values[0], values[1], values[2]);
+                    try {
+                        sendReadRequest(values[0], values[1], values[2]);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
 
                 } else if (line.contains("take")) {
                     System.out.println("Not implemented yet");

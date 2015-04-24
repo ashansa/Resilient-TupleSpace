@@ -34,8 +34,15 @@ public class TupleManager {
         }
     }
 
-    public void takeTuple(Tuple template) {
-        tupleSpace.take(template);
+    public Tuple takeTuple(Tuple template) {
+        Tuple result = tupleSpace.take(template);
+        if(result != null) {
+            return result;
+        }
+        else {
+            pendingTakeRequests.add(template);
+            return null;
+        }
     }
 
 
