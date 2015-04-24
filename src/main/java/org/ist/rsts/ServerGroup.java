@@ -34,7 +34,6 @@ import org.ist.rsts.tuple.Type;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.util.Hashtable;
 import java.util.Vector;
 
 /**
@@ -48,7 +47,7 @@ import java.util.Vector;
  * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
  * @version 1.0
  */
-public class ServerGroup implements ControlListener, ExceptionListener,
+public class ServerGroup extends Thread implements ControlListener, ExceptionListener,
         MembershipListener, BlockListener {
 
     private long viewChangeTime = 0;
@@ -57,10 +56,11 @@ public class ServerGroup implements ControlListener, ExceptionListener,
     private DataSession groupSession;
     private Service group;
     TupleSpace tupleSpace;
-    private Hashtable<Integer, Long> times = new Hashtable<Integer, Long>();
-    Client client;
+    private Client client;
+    ServerGroup test;
 
-    public ServerGroup(ControlSession control, DataSession grSession, Service gr) throws JGCSException {
+
+    private void init(ControlSession control, DataSession grSession, Service gr) throws JGCSException {
         this.control = control;
         this.groupSession = grSession;
         this.group = gr;
@@ -87,34 +87,42 @@ public class ServerGroup implements ControlListener, ExceptionListener,
         }
 
         try {
-
-            ProtocolFactory pf = new AppiaProtocolFactory();
-            AppiaGroup g = new AppiaGroup();
-            g.setGroupName("group");
-            g.setConfigFileName(args[0]);
-            Protocol p = pf.createProtocol();
-            DataSession session = p.openDataSession(g);
-            ControlSession control = p.openControlSession(g);
-            Service sg = new AppiaService("rrpc_group");
-
-            ServerGroup test = new ServerGroup(control, session, sg);
-            test.run();
+            ServerGroup serverGroup = new ServerGroup();
+            serverGroup.createServerGroup(args[0]);
+            serverGroup.run();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void run() throws Exception {
+    public void createServerGroup(String configFile) throws JGCSException {
+        ProtocolFactory protocolFactory = new AppiaProtocolFactory();
+        AppiaGroup appiaGroup = new AppiaGroup();
+        appiaGroup.setGroupName("group");
+        appiaGroup.setConfigFileName(configFile);
+        Protocol protocol = protocolFactory.createProtocol();
+        DataSession session = protocol.openDataSession(appiaGroup);
+        ControlSession control = protocol.openControlSession(appiaGroup);
+        Service sg = new AppiaService("rrpc_group");
+        this.init(control, session, sg);
+    }
+
+    public void run() {
 
         //starting the client thread
         client = new Client(this);
-        client.start();
+        getClient().start();
 
-        // joins the group
-        control.join();
+        try {
+            // joins the group
+            control.join();
 
-        // wait forever.
-        Thread.sleep(Long.MAX_VALUE);
+            // wait forever.
+            Thread.sleep(Integer.MAX_VALUE);
+        } catch (Exception e) {
+            //log here
+            e.printStackTrace();
+        }
     }
 
     public void write(Tuple tuple) {
@@ -126,8 +134,11 @@ public class ServerGroup implements ControlListener, ExceptionListener,
         try {
             String[] tupleValues = template.getValues();
             Vector<Tuple> tuple = tupleSpace.read(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
-            if (tuple.size() > 0)
+            if (tuple.size() > 0) {
                 sendResultsToClient(tuple.firstElement());
+                String[] result = tuple.firstElement().getValues();
+                System.out.println("result :" + result[0] + "," + result[1] + "," + result[2]);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -151,7 +162,7 @@ public class ServerGroup implements ControlListener, ExceptionListener,
     }
 
     private void sendResultsToClient(Tuple tuple) throws IOException {
-        client.receiveResults(tuple);
+        getClient().receiveResults(tuple);
         /*Message reply = groupSession.createMessage();
         TupleMessage tupleMessage = new TupleMessage(tuple, Type.REPLY);
         tupleMessage.marshal();
@@ -208,6 +219,10 @@ public class ServerGroup implements ControlListener, ExceptionListener,
         arg0.printStackTrace();
     }
 
+    public Client getClient() {
+        return client;
+    }
+
     /*
      * Class that implements a message listener
 	 */
@@ -232,7 +247,7 @@ public class ServerGroup implements ControlListener, ExceptionListener,
 
             if (protoMsg instanceof TupleMessage) {
                 System.out.println("========tuple msg received OnMessage=======");
-                handleRquest((TupleMessage)protoMsg, msg.getSenderAddress());
+                handleRquest((TupleMessage) protoMsg, msg.getSenderAddress());
                 return null;
             }
 

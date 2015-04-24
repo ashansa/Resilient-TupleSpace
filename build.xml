@@ -5,7 +5,7 @@
     <!-- set global properties for this build -->
     <property name="src" location="src"/>
     <property name="build" location="build"/>
-    <property name="lib"  location="lib"/>
+    <property name="lib" location="lib"/>
 
     <path id="classpath">
         <fileset dir="${lib}" includes="**/*.jar"/>
@@ -16,9 +16,10 @@
         <tstamp/>
         <!-- Create the build directory structure used by compile -->
         <mkdir dir="${build}"/>
+        <mkdir dir="test-output"/>
     </target>
 
-    <target name="compile" depends="init" description="compile the source " >
+    <target name="compile" depends="init" description="compile the source ">
         <!-- Compile the java code from ${src} into ${build} -->
         <javac srcdir="${src}" destdir="${build}" classpathref="classpath"/>
 
@@ -27,11 +28,14 @@
             <fileset dir="${src}/main/java">
                 <include name="*.properties"/>
             </fileset>
+            <fileset dir="${src}/test/java">
+                <include name="*.properties"/>
+            </fileset>
         </copy>
     </target>
 
     <target name="clean"
-        description="clean up" >
+            description="clean up">
         <delete dir="${build}"/>
     </target>
 
@@ -122,11 +126,51 @@
     </target>
 
     <target name="runGossip" depends="compile">
-        <java classname="net.sf.appia.gossip.GossipServer" fork="true">
-            <arg value="-port"/>
-            <arg value="10000"/>
-            <arg value="-debug"/>
-            <arg value="-solo"/>
+
+            <java classname="net.sf.appia.gossip.GossipServer" fork="true">
+                <arg value="-port"/>
+                <arg value="10000"/>
+                <arg value="-debug"/>
+                <arg value="-solo"/>
+                <classpath>
+                    <pathelement path="${build}"/>
+                    <pathelement location="${lib}/appia-core-4.1.2.jar"/>
+                    <pathelement location="${lib}/appia-groupcomm-4.1.2.jar"/>
+                    <pathelement location="${lib}/appia-project-4.1.2.jar"/>
+                    <pathelement location="${lib}/appia-test-4.1.2.jar"/>
+                    <pathelement location="${lib}/flanagan.jar"/>
+                    <pathelement location="${lib}/jgcs-0.6.1.jar"/>
+                    <pathelement location="${lib}/log4j-1.2.14.jar"/>
+                </classpath>
+            </java>
+
+    </target>
+
+    <target name="runGossipParallel" depends="compile">
+        <parallel>
+            <daemons>
+                <java classname="net.sf.appia.gossip.GossipServer" fork="true">
+                    <arg value="-port"/>
+                    <arg value="10000"/>
+                    <arg value="-debug"/>
+                    <arg value="-solo"/>
+                    <classpath>
+                        <pathelement path="${build}"/>
+                        <pathelement location="${lib}/appia-core-4.1.2.jar"/>
+                        <pathelement location="${lib}/appia-groupcomm-4.1.2.jar"/>
+                        <pathelement location="${lib}/appia-project-4.1.2.jar"/>
+                        <pathelement location="${lib}/appia-test-4.1.2.jar"/>
+                        <pathelement location="${lib}/flanagan.jar"/>
+                        <pathelement location="${lib}/jgcs-0.6.1.jar"/>
+                        <pathelement location="${lib}/log4j-1.2.14.jar"/>
+                    </classpath>
+                </java>
+            </daemons>
+        </parallel>
+    </target>
+
+    <target name="test" depends="compile,runGossipParallel">
+        <junit printsummary="on" fork="true" haltonfailure="yes">
             <classpath>
                 <pathelement path="${build}"/>
                 <pathelement location="${lib}/appia-core-4.1.2.jar"/>
@@ -136,8 +180,16 @@
                 <pathelement location="${lib}/flanagan.jar"/>
                 <pathelement location="${lib}/jgcs-0.6.1.jar"/>
                 <pathelement location="${lib}/log4j-1.2.14.jar"/>
+                <pathelement location="${lib}/junit-4.12.jar"/>
+                <pathelement location="${lib}/hamcrest-all-1.3.jar"/>
             </classpath>
-        </java>
+            <formatter usefile="false" type="plain"/>
+            <batchtest todir="test-output">
+                <fileset dir="src/test/java">
+                    <include name="**/*Test*.java"/>
+                </fileset>
+            </batchtest>
+        </junit>
     </target>
 
 </project>

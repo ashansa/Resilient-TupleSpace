@@ -57,11 +57,11 @@ public class Client extends Thread {
         data.send(msg, rpcService, null, null);*/
     }
 
-    private void sendWriteRequest(String value1, String value2, String value3) throws IOException {
+    public void sendWriteRequest(String value1, String value2, String value3) throws IOException {
         server.write(new Tuple(value1, value2, value3));
     }
 
-    private void sendReadRequest(String value1, String value2, String value3) throws IOException {
+    public void sendReadRequest(String value1, String value2, String value3) throws IOException {
         server.read(new Tuple(value1, value2, value3));
     }
 

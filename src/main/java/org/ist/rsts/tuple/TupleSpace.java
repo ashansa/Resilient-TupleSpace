@@ -1,13 +1,14 @@
 package org.ist.rsts.tuple;
 
 import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by ashansa on 4/15/15.
  */
 public class TupleSpace {
 
-    Vector<Tuple> tuples = new Vector<Tuple>();
+    CopyOnWriteArrayList<Tuple> tuples = new CopyOnWriteArrayList<Tuple>();
 
     public boolean write(Tuple tuple) {
         tuples.add(tuple);
@@ -15,8 +16,10 @@ public class TupleSpace {
     }
 
     public Vector<Tuple> read(Tuple template) {
+        System.out.println("reading values");
         Vector<Tuple> matches = new Vector<Tuple>();
         String[] templateElements = template.getValues();
+
         for (Tuple tuple : tuples) {
             String[] tupleValues = tuple.getValues();
             //checking 1st value
