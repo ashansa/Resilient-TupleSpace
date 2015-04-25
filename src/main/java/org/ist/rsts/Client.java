@@ -72,9 +72,9 @@ public class Client extends Thread {
             lock.lock();
             Tuple result = server.read(new Tuple(value1, value2, value3));
             if(result == null) {
-                System.out.println("waiting..........");
+                System.out.println("read: waiting..........");
                 readBlock.await();
-                System.out.println("wait finish.......");
+                System.out.println("read: wait finish.......");
             } else {
                 String[] values = result.getValues();
                 System.out.println("result :" + values[0] + "," + values[1] + "," + values[2]);
@@ -86,6 +86,20 @@ public class Client extends Thread {
 
     }
 
+    public void sendTakeRequest(String value1, String value2, String value3) throws IOException, InterruptedException {
+        try{
+            lock.lock();
+            server.take(new Tuple(value1, value2, value3));
+            System.out.println("take : wait.....");
+            takeBlock.await();
+            System.out.println("take : wait finish.......");
+        } finally {
+            lock.unlock();
+        }
+
+    }
+
+
     public void receiveResults(Tuple result, Type type) {
         System.out.println("result received");
         for (String value : result.getValues()) {
@@ -96,7 +110,16 @@ public class Client extends Thread {
             try{
                 lock.lock();
                 readBlock.signal();
-                System.out.println("signaled......");
+                System.out.println("read signaled......");
+            } finally {
+                lock.unlock();
+            }
+        }
+        if(Type.TAKE.equals(type)) {
+            try{
+                lock.lock();
+                takeBlock.signal();
+                System.out.println("take signaled......");
             } finally {
                 lock.unlock();
             }
@@ -113,34 +136,40 @@ public class Client extends Thread {
         System.out.println("    read:*,2,3");
         System.out.println("    take:*,2,3");
 
-        try{
-            while (true) {
+        while (true) {
+            try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(
                         System.in));
                 line = br.readLine();
 
-                if (line.contains("write")) {
-                    System.out.println("Sending tuple write request");
+                if (line != null) {
                     //splitting the line write:1,2,3
                     String[] values = line.split(":")[1].split(",");
-                    sendWriteRequest(values[0], values[1], values[2]);
 
-                } else if (line.contains("read")) {
-                    System.out.println("Sending tuple read request");
-                    //splitting the line write:1,2,3
-                    String[] values = line.split(":")[1].split(",");
-                    try {
-                        sendReadRequest(values[0], values[1], values[2]);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                    if (line.contains("write")) {
+                        System.out.println("Sending tuple write request");
+                        sendWriteRequest(values[0], values[1], values[2]);
+
+                    } else if (line.contains("read")) {
+                        System.out.println("Sending tuple read request");
+                        try {
+                            sendReadRequest(values[0], values[1], values[2]);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                    } else if (line.contains("take")) {
+                        try {
+                            sendTakeRequest(values[0], values[1], values[2]);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
-
-                } else if (line.contains("take")) {
-                    System.out.println("Not implemented yet");
                 }
+            } catch (Exception e) {
+                //e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+
     }
 }

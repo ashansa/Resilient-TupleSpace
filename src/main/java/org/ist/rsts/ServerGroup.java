@@ -133,10 +133,9 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         String[] tupleValues = template.getValues();
         //read can be served locally without bcast request
         Tuple tuple = tupleManager.readTuple(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
-        if (tuple != null) {
-            return tuple;
-        }
-        return null;
+
+        //tuple can be null if no match found
+        return tuple;
 
     }
 
@@ -282,9 +281,14 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 String[] tupleValues = tupleMessage.getTuple().getValues();
                 switch (tupleMessage.getType()) {
                     case WRITE:
-                        tupleManager.writeTuple(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
+                        //tupleManager.writeTuple(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
+                        tupleManager.writeTuple(tupleMessage.getTuple());
                         break;
                     case TAKE:
+                        Tuple tuple = tupleManager.takeTuple(tupleMessage.getTuple());
+                        if(tuple != null) {
+                            sendResultsNotificationToClient(tuple, Type.TAKE);
+                        }
                         break;
                     //case READ not needed
                     // because read request can be served locally. So other servers will not get the read request

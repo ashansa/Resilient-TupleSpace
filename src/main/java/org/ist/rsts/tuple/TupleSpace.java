@@ -40,13 +40,8 @@ public class TupleSpace {
         return matches;
     }
 
-    public Tuple take(Tuple template) {
-        Tuple match = null;
-        if (tuples.contains(template)) {
-            match = template;
-            tuples.remove(template);
-        }
-        return match;
+    public void remove(Tuple tuple) {
+        tuples.remove(tuple);
     }
 
     //TODO temp method......

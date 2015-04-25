@@ -21,6 +21,8 @@ public class TupleManager {
         tupleSpace.write(tuple);
         if(pendingReadRequests.size() > 0)
             servePendingReadRequests(tuple);
+        if(pendingTakeRequests.size() > 0)
+            servePendingTakeRequests(tuple);
     }
 
     public Tuple readTuple(Tuple template) {
@@ -35,11 +37,13 @@ public class TupleManager {
     }
 
     public Tuple takeTuple(Tuple template) {
-        Tuple result = tupleSpace.take(template);
-        if(result != null) {
-            return result;
-        }
-        else {
+        Vector<Tuple> matches = tupleSpace.read(template);
+        if(matches.size() > 0) {
+            //TODO: Select one common match to delete
+            Tuple toTake = matches.firstElement();
+            tupleSpace.remove(toTake);
+            return toTake;
+        } else {
             pendingTakeRequests.add(template);
             return null;
         }
@@ -50,12 +54,31 @@ public class TupleManager {
         for (int i = 0; i < pendingReadRequests.size(); i++) {
             boolean match = isAMatch(pendingReadRequests.get(i), newTuple);
             if(match) {
-                System.out.println("found a match for a pending.....");
+                System.out.println("found a match for a pending read.....");
                 try {
                     server.sendResultsNotificationToClient(newTuple, Type.READ);
+                    pendingTakeRequests.remove(pendingReadRequests.get(i));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+    }
+
+    private void servePendingTakeRequests(Tuple newTuple) {
+        for (int i = 0; i < pendingTakeRequests.size(); i++) {
+            try {
+                boolean match = isAMatch(pendingTakeRequests.get(i), newTuple);
+                if (match) {
+                    System.out.println("found a match for a pending take. Try take again....");
+                    Tuple tupleToTake = takeTuple(pendingTakeRequests.get(i));
+                    if (tupleToTake != null) {
+                        server.sendResultsNotificationToClient(tupleToTake, Type.TAKE);
+                        pendingTakeRequests.remove(pendingReadRequests.get(i));
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
