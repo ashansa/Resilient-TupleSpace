@@ -57,7 +57,7 @@ public class TupleManager {
                 System.out.println("found a match for a pending read.....");
                 try {
                     server.sendResultsNotificationToClient(newTuple, Type.READ);
-                    pendingTakeRequests.remove(pendingReadRequests.get(i));
+                    pendingReadRequests.remove(pendingReadRequests.get(i));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -71,10 +71,10 @@ public class TupleManager {
                 boolean match = isAMatch(pendingTakeRequests.get(i), newTuple);
                 if (match) {
                     System.out.println("found a match for a pending take. Try take again....");
-                    Tuple tupleToTake = takeTuple(pendingTakeRequests.get(i));
-                    if (tupleToTake != null) {
-                        server.sendResultsNotificationToClient(tupleToTake, Type.TAKE);
-                        pendingTakeRequests.remove(pendingReadRequests.get(i));
+                    Tuple tupleTaken = takeTuple(pendingTakeRequests.get(i));
+                    if (tupleTaken != null) {
+                        server.sendResultsNotificationToClient(tupleTaken, Type.TAKE);
+                        pendingTakeRequests.remove(pendingTakeRequests.get(i));
                     }
                 }
             } catch (IOException e) {
