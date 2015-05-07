@@ -3,7 +3,7 @@
  * Copyright 2007 University of Lisbon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * you may not use this logFile except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -27,13 +27,15 @@ import net.sf.jgcs.membership.BlockListener;
 import net.sf.jgcs.membership.BlockSession;
 import net.sf.jgcs.membership.MembershipListener;
 import net.sf.jgcs.membership.MembershipSession;
-import org.ist.rsts.tuple.Tuple;
-import org.ist.rsts.tuple.TupleManager;
-import org.ist.rsts.tuple.TupleMessage;
-import org.ist.rsts.tuple.Type;
+import org.ist.rsts.tuple.*;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketAddress;
+import java.util.Properties;
+import java.util.Vector;
 
 /**
  * This class defines a ServerOpenGroupTest. This example shows how to use and
@@ -56,15 +58,25 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     private Service group;
     //TupleSpace tupleSpace;
     private TupleManager tupleManager;
+    private LogManager logManager;
     private Client client;
-    ServerGroup test;
 
+    Properties properties = new Properties();
+    int membersInGroup = -1;
+    int allNodes = -1;
+    static int writeTakeSeqNo = 0;
 
-    private void init(ControlSession control, DataSession grSession, Service gr) throws JGCSException {
+    private void init(ControlSession control, DataSession grSession, Service gr, String logId) throws IOException {
         this.control = control;
         this.groupSession = grSession;
         this.group = gr;
         this.tupleManager = new TupleManager(this);
+        this.logManager = new LogManager(logId);
+
+        InputStream input = new FileInputStream("./src/main/java/services.properties");
+        properties.load(input);
+        allNodes = Integer.parseInt(properties.getProperty("number_of_nodes"));
+        System.out.println(" all nodes =======> " + allNodes);
 
         System.out.println("Group is " + gr);
 
@@ -81,21 +93,21 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     }
 
     public static void main(String[] args) {
-        if (args.length != 1) {
-            System.out.println("Must put the xml file name as an argument.");
+        if (args.length != 2) {
+            System.out.println("Must put the xml logFile name as an argument.");
             System.exit(1);
         }
 
         try {
             ServerGroup serverGroup = new ServerGroup();
-            serverGroup.createServerGroup(args[0]);
+            serverGroup.createServerGroup(args[0], args[1]);
             serverGroup.run();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void createServerGroup(String configFile) throws JGCSException {
+    public void createServerGroup(String configFile, String logId) throws IOException {
         ProtocolFactory protocolFactory = new AppiaProtocolFactory();
         AppiaGroup appiaGroup = new AppiaGroup();
         appiaGroup.setGroupName("group");
@@ -104,7 +116,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         DataSession session = protocol.openDataSession(appiaGroup);
         ControlSession control = protocol.openControlSession(appiaGroup);
         Service sg = new AppiaService("rrpc_group");
-        this.init(control, session, sg);
+        this.init(control, session, sg, logId);
     }
 
     public void run() {
@@ -126,8 +138,11 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     }
 
     public void write(Tuple tuple) {
-        TupleMessage msg = new TupleMessage(tuple, Type.WRITE);
-        sendClientRequest(msg);
+        System.out.println("all and current : " + allNodes + " , " + membersInGroup);
+        if(membersInGroup > Math.ceil(allNodes/2)) {
+            TupleMessage msg = new TupleMessage(tuple, Type.WRITE);
+            sendClientRequest(msg);
+        }
     }
 
     public Tuple read(Tuple template) {
@@ -142,8 +157,12 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     }
 
     public void take(Tuple template) {
-        TupleMessage msg = new TupleMessage(template, Type.TAKE);
-        sendClientRequest(msg);
+        System.out.println("all and current : " + allNodes + " , " + membersInGroup);
+        if(membersInGroup > Math.ceil(allNodes/2)) {
+            TupleMessage msg = new TupleMessage(template, Type.TAKE);
+            sendClientRequest(msg);
+        }
+
     }
 
     private void sendClientRequest(TupleMessage tupleMsg) {
@@ -187,6 +206,11 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         try {
             System.out.println("-- NEW VIEW: "
                     + ((MembershipSession) control).getMembership().getMembershipID() + "\tSize: " + ((MembershipSession) control).getMembership().getMembershipList().size());
+
+            String view = ((MembershipSession) control).getMembership().getMembershipID().toString();
+            System.out.println("View ID: " + view.split(";")[0].split(":")[1]);
+
+            membersInGroup = ((MembershipSession) control).getMembership().getMembershipList().size();
         } catch (NotJoinedException e) {
             e.printStackTrace();
             groupSession.close();
@@ -243,7 +267,6 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 return null;
 
             if (protoMsg instanceof TupleMessage) {
-                System.out.println("========tuple msg received OnMessage=======");
                 handleRquest((TupleMessage) protoMsg, msg.getSenderAddress());
                 return null;
             }
@@ -295,6 +318,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                     //case READ not needed
                     // because read request can be served locally. So other servers will not get the read request
                 }
+                logManager.writeLog(++writeTakeSeqNo, tupleMessage);
 
             } catch (Exception e) {
                 e.printStackTrace();
