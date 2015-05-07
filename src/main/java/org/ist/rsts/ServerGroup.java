@@ -27,11 +27,13 @@ import net.sf.jgcs.membership.BlockListener;
 import net.sf.jgcs.membership.BlockSession;
 import net.sf.jgcs.membership.MembershipListener;
 import net.sf.jgcs.membership.MembershipSession;
-import org.ist.rsts.tuple.*;
+import org.ist.rsts.tuple.Tuple;
+import org.ist.rsts.tuple.TupleManager;
+import org.ist.rsts.tuple.TupleMessage;
+import org.ist.rsts.tuple.Type;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.util.Vector;
 
 /**
  * This class defines a ServerOpenGroupTest. This example shows how to use and
