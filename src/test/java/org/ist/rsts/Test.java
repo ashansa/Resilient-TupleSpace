@@ -34,9 +34,9 @@ public class Test {
         ServerGroup server2 = new ServerGroup();
         ServerGroup server3 = new ServerGroup();
 
-        server1.createServerGroup("config/server-modified.xml");
-        server2.createServerGroup("config/server-modified.xml");
-        server3.createServerGroup("config/server-modified.xml");
+        server1.createServerGroup("config/server-modified.xml", "1");
+        server2.createServerGroup("config/server-modified.xml", "2");
+        server3.createServerGroup("config/server-modified.xml", "3");
 
         server1.start();
         server2.start();

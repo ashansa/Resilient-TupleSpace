@@ -3,7 +3,7 @@
  * Copyright 2007 University of Lisbon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * you may not use this logFile except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -19,6 +19,7 @@
 package org.ist.rsts;
 
 import org.ist.rsts.tuple.TupleMessage;
+import org.ist.rsts.tuple.Type;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -27,7 +28,6 @@ public abstract class Constants {
 
     enum MessageType {
         SERVER, TUPLE;
-
         ProtocolMessage createMessage(byte[] buffer) throws IOException {
             switch (this) {
                 case SERVER:
