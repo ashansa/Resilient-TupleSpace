@@ -143,6 +143,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         if(membersInGroup > Math.ceil(allNodes/2)) {
             TupleMessage msg = new TupleMessage(tuple, Type.WRITE);
             sendClientRequest(msg);
+        } else {
+            System.out.println("You are in a minority partition. Cannot execute write request.");
         }
     }
 
@@ -165,6 +167,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 TupleMessage msg = new TupleMessage(template, Type.TAKE);
                 sendClientRequest(msg);
             }
+        } else {
+            System.out.println("You are in a minority partition. Cannot execute write request.");
         }
     }
 
