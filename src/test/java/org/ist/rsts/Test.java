@@ -17,6 +17,7 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Random;
 
 public class Test {
     public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException, TransformerException {
@@ -44,7 +45,17 @@ public class Test {
 
        Thread.sleep(5000);
 
-        System.out.println("huuuuuu");
+        WriteTest writeTest = new WriteTest(new ServerGroup[]{server1, server2, server3});
+        writeTest.start();
+        System.out.println("....... write test started .........");
+        ReadTest readTest = new ReadTest(new ServerGroup[]{server1, server2, server3});
+        readTest.start();
+        System.out.println("....... read test started .........");
+
+        writeTest.join();
+        readTest.join();
+
+       /* System.out.println("huuuuuu");
         for (int i = 0; i < 100; i++) {
            server1.getClient().sendWriteRequest("1", "2", String.valueOf(i));
            // server1.getClient().sendReadRequest("*","*","*");;
@@ -55,11 +66,11 @@ public class Test {
         for (int i = 0; i < 100; i++) {
            // server1.getClient().sendWriteRequest("1","2",String.valueOf(i));
             server1.getClient().sendReadRequest("*","*","*");;
-            System.out.println("Writing tuple");
+            System.out.println("Reading tuple");
         }
 
         Thread.sleep(2000);
-
+*/
         //Thread.sleep(60000);
 
     }
@@ -91,4 +102,73 @@ public class Test {
     StreamResult result = new StreamResult(new File("config/server-modified.xml"));
     transformer.transform(source,result);
 }
+
+    public class WriteTest extends Thread {
+
+        ServerGroup[] servers;
+        Random rand = new Random();
+        public WriteTest(ServerGroup[] servers) {
+            this.servers = servers;
+        }
+        public void run() {
+            for (int i = 0; i < 100; i++) {
+                try {
+                int no = rand.nextInt(2);
+                    servers[no].getClient().sendWriteRequest("1", "2", String.valueOf(i));
+                     // server1.getClient().sendReadRequest("*","*","*");;
+                    System.out.println("Writing tuple");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public class ReadTest extends Thread {
+
+        ServerGroup[] servers;
+        Random rand = new Random();
+        public ReadTest(ServerGroup[] servers) {
+            this.servers = servers;
+        }
+        public void run() {
+            for (int i = 0; i < 100; i++) {
+                try {
+                    int no = rand.nextInt(2);
+                    servers[no].getClient().sendReadRequest("*", "*", String.valueOf(i));
+
+                    // server1.getClient().sendReadRequest("*","*","*");;
+                    System.out.println("Read tuple");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public class TakeTest extends Thread {
+
+        ServerGroup[] servers;
+        Random rand = new Random();
+        public TakeTest(ServerGroup[] servers) {
+            this.servers = servers;
+        }
+        public void run() {
+            for (int i = 0; i < 100; i++) {
+                try {
+                    int no = rand.nextInt(2);
+                    servers[no].getClient().sendTakeRequest("*", "*", String.valueOf(i));
+
+                    // server1.getClient().sendReadRequest("*","*","*");;
+                    System.out.println("Take tuple");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 }

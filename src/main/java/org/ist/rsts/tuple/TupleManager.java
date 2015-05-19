@@ -11,6 +11,7 @@ public class TupleManager {
     //TODO: can we have > 1 pending req? since we block when there is a pending req
     Vector<Tuple> pendingReadRequests = new Vector<Tuple>();
     Vector<Tuple> pendingTakeRequests = new Vector<Tuple>();
+    Vector<Tuple> pendingTakeDecisions = new Vector<Tuple>();
     ServerGroup server;
 
     public TupleManager(ServerGroup server) {
@@ -23,6 +24,8 @@ public class TupleManager {
             servePendingReadRequests(tuple);
         if(pendingTakeRequests.size() > 0)
             servePendingTakeRequests(tuple);
+        if(pendingTakeDecisions.size() > 0)
+            servePendingTakeDecisions(tuple);
     }
 
     public Tuple readTuple(Tuple template) {
@@ -36,18 +39,48 @@ public class TupleManager {
         }
     }
 
-    public Tuple takeTuple(Tuple template) {
+    public Tuple getTupleForTake(Tuple template, boolean isRetry) {
         Vector<Tuple> matches = tupleSpace.read(template);
+        if (matches.size() > 0) {
+            //TODO: Select one common match to delete
+            Tuple toTake = matches.firstElement();
+            return toTake;
+        } else {
+            if (!isRetry) {
+                pendingTakeDecisions.add(template);
+            }
+            return null;
+        }
+    }
+
+    public Tuple takeTuple(Tuple tuple) {
+        Vector<Tuple> matches = tupleSpace.read(tuple);
         if(matches.size() > 0) {
             //TODO: Select one common match to delete
             Tuple toTake = matches.firstElement();
             tupleSpace.remove(toTake);
             return toTake;
         } else {
-            pendingTakeRequests.add(template);
+            pendingTakeRequests.add(tuple);
             return null;
         }
     }
+
+    private void servePendingTakeDecisions(Tuple newTuple) {
+        //this new tuple may have been removed due to a pending take request. So check exist too
+        for (int i = 0; i < pendingTakeDecisions.size(); i++) {
+            boolean match = isAMatch(pendingTakeDecisions.get(i), newTuple);
+            if (match) {
+                Tuple tupleToTake = getTupleForTake(pendingTakeDecisions.get(i), true);
+                if (tupleToTake != null) {
+                    System.out.println("found a match for a pending take DECISION. notifying client");
+                    server.receiveTakeDecisionResult(tupleToTake);
+                    pendingTakeDecisions.remove(pendingTakeDecisions.get(i));
+                }
+            }
+        }
+    }
+
 
 
     private void servePendingReadRequests(Tuple newTuple) {

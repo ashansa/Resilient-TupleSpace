@@ -160,11 +160,19 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     public void take(Tuple template) {
         System.out.println("all and current : " + allNodes + " , " + membersInGroup);
         if(membersInGroup > Math.ceil(allNodes/2)) {
-            TupleMessage msg = new TupleMessage(template, Type.TAKE);
-            sendClientRequest(msg);
+            Tuple tupleToTake = tupleManager.getTupleForTake(template, false);
+            if(tupleToTake != null) {
+                TupleMessage msg = new TupleMessage(template, Type.TAKE);
+                sendClientRequest(msg);
+            }
         }
-
     }
+
+    public void receiveTakeDecisionResult(Tuple tupleToTake) {
+        TupleMessage msg = new TupleMessage(tupleToTake, Type.TAKE);
+        sendClientRequest(msg);
+    }
+
 
     private void sendClientRequest(TupleMessage tupleMsg) {
         try {
