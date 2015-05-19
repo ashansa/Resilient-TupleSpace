@@ -76,7 +76,7 @@
 
     <target name="runServer1" depends="compile">
         <java classname="org.ist.rsts.ServerGroup" fork="true">
-            <arg value="config/server1.xml"/>
+            <arg value="config/server-modified.xml"/>
             <arg value="1"/>
             <classpath>
                 <pathelement path="${build}"/>
@@ -94,7 +94,7 @@
 
     <target name="runServer2" depends="compile">
         <java classname="org.ist.rsts.ServerGroup" fork="true">
-            <arg value="config/server2.xml"/>
+            <arg value="config/server-modified.xml"/>
             <arg value="2"/>
             <classpath>
                 <pathelement path="${build}"/>
@@ -112,7 +112,7 @@
 
     <target name="runServer3" depends="compile">
         <java classname="org.ist.rsts.ServerGroup" fork="true">
-            <arg value="config/server2.xml"/>
+            <arg value="config/server-modified.xml"/>
             <arg value="3"/>
             <classpath>
                 <pathelement path="${build}"/>

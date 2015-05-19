@@ -27,15 +27,16 @@ import net.sf.jgcs.membership.BlockListener;
 import net.sf.jgcs.membership.BlockSession;
 import net.sf.jgcs.membership.MembershipListener;
 import net.sf.jgcs.membership.MembershipSession;
-import org.ist.rsts.tuple.*;
+import org.ist.rsts.tuple.Tuple;
+import org.ist.rsts.tuple.TupleManager;
+import org.ist.rsts.tuple.TupleMessage;
+import org.ist.rsts.tuple.Type;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
 import java.util.Properties;
-import java.util.Vector;
 
 /**
  * This class defines a ServerOpenGroupTest. This example shows how to use and
@@ -101,7 +102,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         try {
             ServerGroup serverGroup = new ServerGroup();
             serverGroup.createServerGroup(args[0], args[1]);
-            serverGroup.run();
+            serverGroup.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -318,6 +319,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                     //case READ not needed
                     // because read request can be served locally. So other servers will not get the read request
                 }
+                System.out.println("Writing to the log");
                 logManager.writeLog(++writeTakeSeqNo, tupleMessage);
 
             } catch (Exception e) {

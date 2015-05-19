@@ -11,10 +11,14 @@ public class LogManager {
     private final static Logger logger = Logger.getLogger(LogManager.class.getName());
     private PrintWriter writer;
     File logFile;
-    private String logDirPath = "./src/main/resources/logs/";
+    private String logDirPath = "logs";
 
     public LogManager(String logId) {
-        logFile = new File(logDirPath.concat("server_logs_").concat(logId).concat(".txt"));
+        File logDirectory = new File(logDirPath);
+        if (!logDirectory.exists()) {
+            logDirectory.mkdir();
+        }
+        logFile = new File(logDirPath.concat(File.pathSeparator).concat("server_logs_").concat(logId).concat(".txt"));
         try {
             if (!logFile.exists()) {
                 logFile.createNewFile();
@@ -27,7 +31,7 @@ public class LogManager {
     }
 
     public void writeLog(int seqNo, TupleMessage msg) {
-        if(writer == null) {
+        if (writer == null) {
             logger.log(Level.SEVERE, "Log writer not found. Cannot log the operation");
             return;
         }
