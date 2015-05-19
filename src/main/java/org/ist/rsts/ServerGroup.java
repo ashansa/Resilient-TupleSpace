@@ -65,6 +65,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     Properties properties = new Properties();
     int membersInGroup = -1;
     int allNodes = -1;
+    boolean isBlocked = false;
     static int writeTakeSeqNo = 0;
 
     private void init(ControlSession control, DataSession grSession, Service gr, String logId) throws IOException {
@@ -141,6 +142,20 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     public void write(Tuple tuple) {
         System.out.println("all and current : " + allNodes + " , " + membersInGroup);
         if(membersInGroup > Math.ceil(allNodes/2)) {
+
+            if(isBlocked)
+                System.out.println("........... operations are blocked. Waiting until unblocked to write.......");
+
+            //Avoid sending messages after Block OK is issued
+            while(isBlocked) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            System.out.println("........... operations NOT blocked. Going to write.......");
+
             TupleMessage msg = new TupleMessage(tuple, Type.WRITE);
             sendClientRequest(msg);
         } else {
@@ -162,6 +177,20 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     public void take(Tuple template) {
         System.out.println("all and current : " + allNodes + " , " + membersInGroup);
         if(membersInGroup > Math.ceil(allNodes/2)) {
+
+            if(isBlocked)
+                System.out.println("........... operations are blocked. Waiting until unblocked to take.......");
+
+            //Avoid sending messages after Block OK is issued
+            while(isBlocked) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            System.out.println("........... operations NOT blocked. Going to take.......");
+
             Tuple tupleToTake = tupleManager.getTupleForTake(template, false);
             if(tupleToTake != null) {
                 TupleMessage msg = new TupleMessage(template, Type.TAKE);
@@ -224,6 +253,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             System.out.println("View ID: " + view.split(";")[0].split(":")[1]);
 
             membersInGroup = ((MembershipSession) control).getMembership().getMembershipList().size();
+            isBlocked = false;
         } catch (NotJoinedException e) {
             e.printStackTrace();
             groupSession.close();
@@ -238,6 +268,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         viewChangeTime = System.currentTimeMillis();
         System.out.println("Asking to BLOCK");
         try {
+            isBlocked = true;
             ((BlockSession) control).blockOk();
         } catch (JGCSException e) {
             e.printStackTrace();
