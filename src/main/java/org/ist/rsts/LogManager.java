@@ -18,7 +18,8 @@ public class LogManager {
         if (!logDirectory.exists()) {
             logDirectory.mkdir();
         }
-        logFile = new File(logDirPath.concat(File.pathSeparator).concat("server_logs_").concat(logId).concat(".txt"));
+        logFile = new File(logDirectory.getAbsolutePath().concat(File.separator).
+                concat("server_logs_").concat(logId).concat(".txt"));
         try {
             if (!logFile.exists()) {
                 logFile.createNewFile();
