@@ -10,9 +10,7 @@ import org.ist.rsts.tuple.Type;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,22 +21,24 @@ import java.util.logging.Logger;
 public class StateManager {
 
     private static StateManager stateManager;
-    private String viewId;
+    private int viewId = -1;
     private DataSession groupSession;
     private Service group;
     private Hashtable logRequests;
     private ArrayBlockingQueue<LogResponseMessage> blockingQueue;
     private TupleManager tupleManager;
     private final static Logger logger = Logger.getLogger(StateManager.class.getName());
+    private LogManager logManager;
 
     protected StateManager() {
     }
 
-    public void init(DataSession groupSession, Service group, TupleManager tupleManager) {
+    public void init(DataSession groupSession, Service group, TupleManager tupleManager, LogManager logManager) {
         this.groupSession = groupSession;
         this.group = group;
         blockingQueue = new ArrayBlockingQueue(1, true);
         this.tupleManager = tupleManager;
+        this.logManager = logManager;
     }
 
     /**
@@ -53,18 +53,23 @@ public class StateManager {
         return stateManager;
     }
 
-    public void setViewNumber(String viewId) {
+    public void setViewNumber(int viewId) {
         this.viewId = viewId;
     }
 
-    public String getCurrentViewId() {
+    public int getCurrentViewId() {
         return viewId;
     }
 
-    public void syncStates(List<SocketAddress> memberList) throws IOException, InterruptedException {
-        requestLogs(memberList.get(new Random().nextInt(memberList.size())));
-        mergeLogs();
-
+    public void syncStates(List<SocketAddress> memberList, int newId) throws IOException, InterruptedException {
+        System.out.println("OLD...., NEW... : " + newId + "," + newId);
+        if(viewId != newId -1) { //I have not been in the last view. Need to transfer state
+            System.out.println("TODO.............. STATE TRANSFER.....");
+            /*requestLogs(memberList.get(new Random().nextInt(memberList.size())));
+            mergeLogs();*/
+        } else {
+            System.out.println("........... NO STATE TRANSFER needed......");
+        }
     }
 
     public void sendLogsToMerge(LogRequestMessage logRequestMessage) throws IOException {
@@ -92,10 +97,34 @@ public class StateManager {
 
     private void mergeLogs() throws InterruptedException {
         LogResponseMessage responseMessage = blockingQueue.take();
-        String log = responseMessage.getLog();
+       /* String log = responseMessage.getLog();
         String[] logs = log.split("\n");
         for (String s : logs) {
             updateTuples(s.trim());
+        }
+*/
+        HashMap<Integer, String> logMap = responseMessage.getLogs();
+        for (Map.Entry<Integer, String> entry : logMap.entrySet()) {
+            int viewId = entry.getKey();
+            String logString = entry.getValue();
+            String[] logLines = logString.split("\n");
+            for (String log : logLines) {
+                //write:a,b,c
+                String operation = log.split(":")[0];
+                String[] values = log.split(":")[1].split(",");
+                Tuple tuple = new Tuple(values[0], values[1], values[2]);
+
+                //update tuple space
+                if(Type.WRITE.name().equals(operation)) {
+                    tupleManager.writeTuple(tuple);
+                } else if (Type.TAKE.name().equals(operation)) {
+                    tupleManager.takeTuple(tuple);
+                }
+
+                //write to log
+                logManager.writeLog(tuple, operation, viewId);
+
+            }
         }
     }
 

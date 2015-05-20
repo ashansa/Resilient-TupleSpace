@@ -76,7 +76,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         this.group = gr;
         this.tupleManager = new TupleManager(this);
         this.logManager = new LogManager(logId);
-        StateManager.getInstance().init(grSession, gr, tupleManager);
+
+        StateManager.getInstance().init(grSession, gr, tupleManager, logManager);
 
         InputStream input = new FileInputStream("./src/main/java/services.properties");
         properties.load(input);
@@ -264,16 +265,30 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             System.out.println("-- NEW VIEW: "
                     + ((MembershipSession) control).getMembership().getMembershipID() + "\tSize: " + ((MembershipSession) control).getMembership().getMembershipList().size());
 
-            List<SocketAddress> joinedMemebers = ((MembershipSession) control).getMembership().getJoinedMembers();
+            List<SocketAddress> joinedMembers = ((MembershipSession) control).getMembership().getJoinedMembers();
 
+            System.out.println("joined members : " + joinedMembers.size());
+            for (SocketAddress member : joinedMembers) {
+                System.out.println("member: " + member.toString());
+            }
 
             String view = ((MembershipSession) control).getMembership().getMembershipID().toString();
-            System.out.println("View ID: " + view.split(";")[0].split(":")[1]);
-            String viewId = view.split(";")[0].split(":")[1];
+            String viewIdString = view.split(";")[0].split(":")[1];
 
-            if (viewId != null && joinedMemebers.contains(control.getLocalAddress())) {
-                // StateManager.getInstance().setViewNumber(viewId);
-                //StateManager.getInstance().syncStates(((MembershipSession) control).getMembership().getMembershipList());
+            if (viewIdString != null) {
+                int newViewId = Integer.valueOf(viewIdString);
+                if(newViewId != 0) {
+                    System.out.println("View ID: " + newViewId);
+                    try {
+                        System.out.println("current view Id : " + StateManager.getInstance().getCurrentViewId());
+                        System.out.println("new view Id : " + newViewId);
+                        StateManager.getInstance().syncStates(((MembershipSession) control).getMembership().getMembershipList(), newViewId);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                StateManager.getInstance().setViewNumber(newViewId);
+                System.out.println("now view Id : " + StateManager.getInstance().getCurrentViewId());
             }
 
             membersInGroup = ((MembershipSession) control).getMembership().getMembershipList().size();

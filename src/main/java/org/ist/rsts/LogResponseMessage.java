@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.HashMap;
 
 public class LogResponseMessage extends ProtocolMessage implements Serializable {
 
     private String log;
+    private HashMap<Integer, String> logs = new HashMap<Integer, String>();
 
     public LogResponseMessage(String log) {
         super();
@@ -34,5 +36,9 @@ public class LogResponseMessage extends ProtocolMessage implements Serializable 
 
     public void setLog(String log) {
         this.log = log;
+    }
+
+    public HashMap<Integer, String> getLogs() {
+        return logs;
     }
 }

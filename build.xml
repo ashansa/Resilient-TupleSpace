@@ -128,6 +128,24 @@
         </java>
     </target>
 
+    <target name="runServer4" depends="compile">
+        <java classname="org.ist.rsts.ServerGroup" fork="true">
+            <arg value="config/server-modified.xml"/>
+            <arg value="4"/>
+            <classpath>
+                <pathelement path="${build}"/>
+                <pathelement location="${lib}/appia-core-4.1.2.jar"/>
+                <pathelement location="${lib}/appia-groupcomm-4.1.2.jar"/>
+                <pathelement location="${lib}/appia-project-4.1.2.jar"/>
+                <pathelement location="${lib}/appia-test-4.1.2.jar"/>
+                <pathelement location="${lib}/flanagan.jar"/>
+                <pathelement location="${lib}/jgcs-0.6.1.jar"/>
+                <pathelement location="${lib}/log4j-1.2.14.jar"/>
+                <pathelement location="${lib}/other.jar"/>
+            </classpath>
+        </java>
+    </target>
+
     <target name="runGossip" depends="compile">
 
             <java classname="net.sf.appia.gossip.GossipServer" fork="true">
