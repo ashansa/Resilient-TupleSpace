@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 public class LogManager {
 
     private final static Logger logger = Logger.getLogger(LogManager.class.getName());
-    private String logDirPath = "logs";
+    private String logDirPath;
     int corePoolSize = 5;
     int maxPoolSize = 10;
     long keepAliveTime = 5;
@@ -28,6 +28,7 @@ public class LogManager {
 
     public LogManager(String logId) {
         this.logId = logId;
+        this.logDirPath = "log"+File.separator+logId;
         File logDirectory = new File(logDirPath);
         if (!logDirectory.exists()) {
             logDirectory.mkdir();

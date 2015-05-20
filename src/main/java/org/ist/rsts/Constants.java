@@ -19,7 +19,6 @@
 package org.ist.rsts;
 
 import org.ist.rsts.tuple.TupleMessage;
-import org.ist.rsts.tuple.Type;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -27,13 +26,15 @@ import java.nio.ByteBuffer;
 public abstract class Constants {
 
     enum MessageType {
-        SERVER, TUPLE, ISOLATE, RECOVER;
+        SERVER, TUPLE, LOG_REQUEST,LOG_REPLY;
         ProtocolMessage createMessage(byte[] buffer) throws IOException {
             switch (this) {
                 case SERVER:
                     return new ServerMessage(buffer);
                 case TUPLE:
                     return new TupleMessage(buffer);
+                case LOG_REQUEST:
+                    return new LogRequestMessage(buffer);
                 default:
                     return null;
             }
