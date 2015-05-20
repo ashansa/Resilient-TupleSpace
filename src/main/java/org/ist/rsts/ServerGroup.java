@@ -1,19 +1,19 @@
 /**
  * Appia: Group communication and protocol composition framework library
  * Copyright 2007 University of Lisbon
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this logFile except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
+ * <p/>
  * Developer(s): Nuno Carvalho.
  */
 
@@ -36,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -75,6 +76,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         this.group = gr;
         this.tupleManager = new TupleManager(this);
         this.logManager = new LogManager(logId);
+        StateManager.getInstance().init(grSession, gr, tupleManager);
 
         InputStream input = new FileInputStream("./src/main/java/services.properties");
         properties.load(input);
@@ -142,13 +144,13 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
     public void write(Tuple tuple) {
         System.out.println("all and current : " + allNodes + " , " + membersInGroup);
-        if(membersInGroup > Math.ceil(allNodes/2)) {
+        if (membersInGroup > Math.ceil(allNodes / 2)) {
 
-            if(isBlocked)
+            if (isBlocked)
                 System.out.println("........... operations are blocked. Waiting until unblocked to write.......");
 
             //Avoid sending messages after Block OK is issued
-            while(isBlocked) {
+            while (isBlocked) {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
@@ -177,13 +179,13 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
     public void take(Tuple template) {
         System.out.println("all and current : " + allNodes + " , " + membersInGroup);
-        if(membersInGroup > Math.ceil(allNodes/2)) {
+        if (membersInGroup > Math.ceil(allNodes / 2)) {
 
-            if(isBlocked)
+            if (isBlocked)
                 System.out.println("........... operations are blocked. Waiting until unblocked to take.......");
 
             //Avoid sending messages after Block OK is issued
-            while(isBlocked) {
+            while (isBlocked) {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
@@ -193,7 +195,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             System.out.println("........... operations NOT blocked. Going to take.......");
 
             Tuple tupleToTake = tupleManager.getTupleForTake(template, false);
-            if(tupleToTake != null) {
+            if (tupleToTake != null) {
                 TupleMessage msg = new TupleMessage(template, Type.TAKE);
                 sendClientRequest(msg);
             }
@@ -262,16 +264,27 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             System.out.println("-- NEW VIEW: "
                     + ((MembershipSession) control).getMembership().getMembershipID() + "\tSize: " + ((MembershipSession) control).getMembership().getMembershipList().size());
 
+            List<SocketAddress> joinedMemebers = ((MembershipSession) control).getMembership().getJoinedMembers();
+
+
             String view = ((MembershipSession) control).getMembership().getMembershipID().toString();
             System.out.println("View ID: " + view.split(";")[0].split(":")[1]);
             String viewId = view.split(";")[0].split(":")[1];
 
-            StateManager.getInstance().setViewNumber(viewId);
+            if (viewId != null && joinedMemebers.contains(control.getLocalAddress())) {
+                // StateManager.getInstance().setViewNumber(viewId);
+                //StateManager.getInstance().syncStates(((MembershipSession) control).getMembership().getMembershipList());
+            }
+
             membersInGroup = ((MembershipSession) control).getMembership().getMembershipList().size();
             isBlocked = false;
         } catch (NotJoinedException e) {
             e.printStackTrace();
             groupSession.close();
+        } /*catch (InterruptedException e) {
+            e.printStackTrace();
+        } */ catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -330,6 +343,15 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 return null;
             }
 
+            if (protoMsg instanceof LogResponseMessage) {
+                StateManager.getInstance().addToBlockingQueue((LogResponseMessage) protoMsg);
+            }
+
+            if (protoMsg instanceof LogRequestMessage) {
+
+            }
+
+
             // If if is a client message
             else if (protoMsg instanceof ServerMessage) {
                 System.out.println("========server msg received OnMessage=======");
@@ -370,7 +392,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                         break;
                     case TAKE:
                         Tuple tuple = tupleManager.takeTuple(tupleMessage.getTuple());
-                        if(tuple != null) {
+                        if (tuple != null) {
                             sendResultsNotificationToClient(tuple, Type.TAKE);
                         }
                         break;
@@ -378,7 +400,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                     // because read request can be served locally. So other servers will not get the read request
                 }
                 System.out.println("Writing to the log");
-                logManager.writeLog( tupleMessage,StateManager.getInstance().getCurrentViewId());
+                logManager.writeLog(tupleMessage, StateManager.getInstance().getCurrentViewId());
 
             } catch (Exception e) {
                 e.printStackTrace();
