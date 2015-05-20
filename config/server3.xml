@@ -8,6 +8,9 @@
 	<session name="TCPSession" sharing="private">
 			<protocol>net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
 	</session>
+    <session name="crashRecover" sharing="private">
+        <protocol>org.ist.rsts.minorityview.CrashRecoverLayer</protocol>
+    </session>
 	<session name="gbl" sharing="private">
 		<protocol>net.sf.appia.protocols.group.bottom.GroupBottomLayer</protocol>
 	</session>

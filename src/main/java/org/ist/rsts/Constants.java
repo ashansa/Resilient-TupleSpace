@@ -27,7 +27,7 @@ import java.nio.ByteBuffer;
 public abstract class Constants {
 
     enum MessageType {
-        SERVER, TUPLE;
+        SERVER, TUPLE, ISOLATE, RECOVER;
         ProtocolMessage createMessage(byte[] buffer) throws IOException {
             switch (this) {
                 case SERVER:

@@ -127,6 +127,14 @@ public class Client extends Thread {
         }
     }
 
+    private void isolateNode() {
+        server.isolate();
+    }
+
+    private void recoverNode() {
+        server.recover();
+    }
+
     public void run() {
 
         System.out.println("> \n");
@@ -135,6 +143,7 @@ public class Client extends Thread {
         System.out.println("eg: write:1,2,3");
         System.out.println("    read:*,2,3");
         System.out.println("    take:*,2,3");
+        System.out.println("To isolate (or recover) node - type isolate (recover)");
 
         while (true) {
             try {
@@ -143,26 +152,33 @@ public class Client extends Thread {
                 line = br.readLine();
 
                 if (line != null) {
-                    //splitting the line write:1,2,3
-                    String[] values = line.split(":")[1].split(",");
 
-                    if (line.contains("write")) {
-                        System.out.println("Sending tuple write request");
-                        sendWriteRequest(values[0], values[1], values[2]);
+                    if (line.contains("isolate")) {
+                        isolateNode();
+                    } else  if (line.contains("recover")) {
+                        recoverNode();
+                    } else {
+                        //splitting the line write:1,2,3
+                        String[] values = line.split(":")[1].split(",");
 
-                    } else if (line.contains("read")) {
-                        System.out.println("Sending tuple read request");
-                        try {
-                            sendReadRequest(values[0], values[1], values[2]);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                        if (line.contains("write")) {
+                            System.out.println("Sending tuple write request");
+                            sendWriteRequest(values[0], values[1], values[2]);
 
-                    } else if (line.contains("take")) {
-                        try {
-                            sendTakeRequest(values[0], values[1], values[2]);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        } else if (line.contains("read")) {
+                            System.out.println("Sending tuple read request");
+                            try {
+                                sendReadRequest(values[0], values[1], values[2]);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                        } else if (line.contains("take")) {
+                            try {
+                                sendTakeRequest(values[0], values[1], values[2]);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }
