@@ -45,7 +45,7 @@ public class Test {
 
        Thread.sleep(5000);
 
-        WriteTest writeTest = new WriteTest(new ServerGroup[]{server1, server2, server3});
+        /*WriteTest writeTest = new WriteTest(new ServerGroup[]{server1, server2, server3});
         writeTest.start();
         System.out.println("....... write test started .........");
         ReadTest readTest = new ReadTest(new ServerGroup[]{server1, server2, server3});
@@ -54,6 +54,17 @@ public class Test {
 
         writeTest.join();
         readTest.join();
+*/
+
+        WriteTest writeTest = new WriteTest(new ServerGroup[]{server1, server2, server3});
+        writeTest.start();
+        System.out.println("....... write test started .........");
+        TakeTest takeTest = new TakeTest(new ServerGroup[]{server1, server2, server3});
+        takeTest.start();
+        System.out.println("....... take test started .........");
+
+        writeTest.join();
+        takeTest.join();
 
        /* System.out.println("huuuuuu");
         for (int i = 0; i < 100; i++) {
