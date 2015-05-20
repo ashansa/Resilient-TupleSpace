@@ -4,10 +4,7 @@ import org.ist.rsts.tuple.Tuple;
 import org.ist.rsts.tuple.TupleMessage;
 import org.ist.rsts.tuple.Type;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -18,11 +15,11 @@ import java.util.logging.Logger;
 public class LogManager {
 
     private final static Logger logger = Logger.getLogger(LogManager.class.getName());
-    private String logDirPath;
+    private static String logDirPath;
     int corePoolSize = 5;
     int maxPoolSize = 10;
     long keepAliveTime = 5;
-    String logId;
+    static String logId;
 
     BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
     ThreadPoolExecutor executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.MINUTES, queue);
@@ -30,7 +27,7 @@ public class LogManager {
 
     public LogManager(String logId) {
         this.logId = logId;
-        this.logDirPath = "log"+File.separator+logId;
+        this.logDirPath = "log" + File.separator + logId;
         File logDirectory = new File(logDirPath);
         if (!logDirectory.exists()) {
             logDirectory.mkdir();
@@ -44,9 +41,9 @@ public class LogManager {
 
     public void writeLog(Tuple tuple, String operation, int viewId) {
         Type type = null;
-        if(Type.WRITE.name().equals(operation))
+        if (Type.WRITE.name().equals(operation))
             type = Type.WRITE;
-        else if(Type.TAKE.name().equals(operation))
+        else if (Type.TAKE.name().equals(operation))
             type = Type.TAKE;
 
         executor.execute(new LogWriteTask(viewId, logId, tuple, type, logDirPath));
@@ -123,5 +120,23 @@ public class LogManager {
                 logger.log(Level.WARNING, "Could not write log");
             }
         }
+    }
+
+    public static String getLogForView(int viewId) throws IOException {
+
+        FileReader reader = new FileReader(new File(logDirPath.concat(File.separator).
+                concat("log-").concat(logId).concat("-").concat(String.valueOf(viewId))));
+
+        BufferedReader br = new BufferedReader(reader);
+        String log = "";
+        String line;
+
+        while ((line = br.readLine()) != null) {
+            log = log + line + "\n";
+        }
+
+        br.close();
+        System.out.println("log ====>" + log);
+        return log;
     }
 }

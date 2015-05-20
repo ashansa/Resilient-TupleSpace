@@ -10,7 +10,10 @@ import org.ist.rsts.tuple.Type;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,7 +66,7 @@ public class StateManager {
 
     public void syncStates(List<SocketAddress> memberList, int newId) throws IOException, InterruptedException {
         System.out.println("OLD...., NEW... : " + newId + "," + newId);
-        if(viewId != newId -1) { //I have not been in the last view. Need to transfer state
+        if (viewId != newId - 1) { //I have not been in the last view. Need to transfer state
             System.out.println("TODO.............. STATE TRANSFER.....");
             /*requestLogs(memberList.get(new Random().nextInt(memberList.size())));
             mergeLogs();*/
@@ -73,19 +76,20 @@ public class StateManager {
     }
 
     public void sendLogsToMerge(LogRequestMessage logRequestMessage) throws IOException {
-        int requesterViewId =logRequestMessage.getViewId();
-       /* // Need to send correct log messages.
-        LogResponseMessage logRequestMsg = new LogResponseMessage();
+        int requesterViewId = logRequestMessage.getViewId();
+        // Need to send correct log messages.
+
+        LogResponseMessage logRequestMsg = new LogResponseMessage(getLogs(requesterViewId));
         Message msg = groupSession.createMessage();
         logRequestMsg.marshal();
         byte[] bytes = Constants.createMessageToSend(Constants.MessageType.TUPLE, logRequestMsg.getByteArray());
         msg.setPayload(bytes);
 
-        groupSession.send(msg, group, logRequestMessage.getSenderAddress(), null, null);*/
+        groupSession.send(msg, group, logRequestMessage.getSenderAddress(), null, null);
     }
 
     private void requestLogs(SocketAddress destination) throws IOException {
-        System.out.println("view id ======"+viewId);
+        System.out.println("view id ======" + viewId);
         LogRequestMessage logRequestMsg = new LogRequestMessage(Integer.valueOf(viewId));
         Message msg = groupSession.createMessage();
         logRequestMsg.marshal();
@@ -115,7 +119,7 @@ public class StateManager {
                 Tuple tuple = new Tuple(values[0], values[1], values[2]);
 
                 //update tuple space
-                if(Type.WRITE.name().equals(operation)) {
+                if (Type.WRITE.name().equals(operation)) {
                     tupleManager.writeTuple(tuple);
                 } else if (Type.TAKE.name().equals(operation)) {
                     tupleManager.takeTuple(tuple);
@@ -147,6 +151,16 @@ public class StateManager {
         } catch (Exception e) {
             logger.log(Level.WARNING, "could not update tuple for log line: " + logLine);
         }
+    }
+
+    private HashMap<Integer, String> getLogs(int requesterViewId) throws IOException {
+        HashMap<Integer, String> logs = new HashMap<Integer, String>();
+
+        // travesing from previous view to current view.
+        for (int i = requesterViewId - 1; i < getCurrentViewId() + 1; i++) {
+            logs.put(i, LogManager.getLogForView(i));
+        }
+        return logs;
     }
 
     public void addToBlockingQueue(LogResponseMessage response) {

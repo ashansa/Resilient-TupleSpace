@@ -8,12 +8,11 @@ import java.util.HashMap;
 
 public class LogResponseMessage extends ProtocolMessage implements Serializable {
 
-    private String log;
     private HashMap<Integer, String> logs = new HashMap<Integer, String>();
 
-    public LogResponseMessage(String log) {
+    public LogResponseMessage(HashMap<Integer,String> logs) {
         super();
-        this.log = log;
+        this.logs = logs;
     }
 
     public LogResponseMessage(byte[] buffer) throws IOException {
@@ -22,20 +21,12 @@ public class LogResponseMessage extends ProtocolMessage implements Serializable 
 
     @Override
     public void writeUserData(ObjectOutputStream os) throws IOException {
-        os.writeUTF(log);
+        os.writeObject(logs);
     }
 
     @Override
     public void readUserData(ObjectInputStream is) throws IOException, ClassNotFoundException {
-        log = is.readUTF();
-    }
-
-    public String getLog() {
-        return log;
-    }
-
-    public void setLog(String log) {
-        this.log = log;
+        logs = (HashMap<Integer, String>) is.readObject();
     }
 
     public HashMap<Integer, String> getLogs() {
