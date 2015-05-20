@@ -12,14 +12,13 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.
  *
  * Developer(s): Nuno Carvalho.
  */
 
 package org.ist.rsts;
 
-import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.jgcs.AppiaGroup;
 import net.sf.appia.jgcs.AppiaProtocolFactory;
 import net.sf.appia.jgcs.AppiaService;
@@ -67,8 +66,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     int membersInGroup = -1;
     int allNodes = -1;
     boolean isBlocked = false;
-    public static boolean isIsolated = false;
     static int writeTakeSeqNo = 0;
+    public static boolean isIsolated = false;
 
     private void init(ControlSession control, DataSession grSession, Service gr, String logId) throws IOException {
         this.control = control;
@@ -143,7 +142,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
     public void write(Tuple tuple) {
         System.out.println("all and current : " + allNodes + " , " + membersInGroup);
-        if(membersInGroup > Math.ceil(allNodes/2) && !isIsolated) {
+        if(membersInGroup > Math.ceil(allNodes/2)) {
 
             if(isBlocked)
                 System.out.println("........... operations are blocked. Waiting until unblocked to write.......");
@@ -159,7 +158,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             System.out.println("........... operations NOT blocked. Going to write.......");
 
             TupleMessage msg = new TupleMessage(tuple, Type.WRITE);
-            bcastClientRequest(msg);
+            sendClientRequest(msg);
         } else {
             System.out.println("You are in a minority partition. Cannot execute write request.");
         }
@@ -178,7 +177,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
     public void take(Tuple template) {
         System.out.println("all and current : " + allNodes + " , " + membersInGroup);
-        if(membersInGroup > Math.ceil(allNodes/2) && !isIsolated) {
+        if(membersInGroup > Math.ceil(allNodes/2)) {
 
             if(isBlocked)
                 System.out.println("........... operations are blocked. Waiting until unblocked to take.......");
@@ -196,7 +195,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             Tuple tupleToTake = tupleManager.getTupleForTake(template, false);
             if(tupleToTake != null) {
                 TupleMessage msg = new TupleMessage(template, Type.TAKE);
-                bcastClientRequest(msg);
+                sendClientRequest(msg);
             }
         } else {
             System.out.println("You are in a minority partition. Cannot execute write request.");
@@ -205,7 +204,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
     public void receiveTakeDecisionResult(Tuple tupleToTake) {
         TupleMessage msg = new TupleMessage(tupleToTake, Type.TAKE);
-        bcastClientRequest(msg);
+        sendClientRequest(msg);
     }
 
     public void isolate() {
@@ -220,7 +219,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         //sendRequest(Constants.MessageType.RECOVER);
     }
 
-    private void bcastClientRequest(TupleMessage tupleMsg) {
+
+    private void sendClientRequest(TupleMessage tupleMsg) {
         try {
             Message msg = groupSession.createMessage();
             tupleMsg.marshal();
@@ -231,19 +231,6 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             e.printStackTrace();
         }
     }
-
-   /* private void sendRequest(Constants.MessageType msgType) {
-        try {
-            Message msg = groupSession.createMessage();
-            String type = msgType.name();
-            msg.setPayload(type.getBytes());
-            groupSession.send(msg, group, null, control.getLocalAddress());
-            System.out.println("....... msg sent ......" + type);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }*/
 
     public void sendResultsNotificationToClient(Tuple tuple, Type type) throws IOException {
         getClient().receiveResults(tuple, type);
@@ -269,14 +256,17 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     }
 
     public void onMembershipChange() {
-        System.out.println("---- NEW VIEW RECIEVED ----");
+        //System.out.println("MEMBERSHIP: "
+        //		+ (System.currentTimeMillis() - viewChangeTime));
         try {
             System.out.println("-- NEW VIEW: "
                     + ((MembershipSession) control).getMembership().getMembershipID() + "\tSize: " + ((MembershipSession) control).getMembership().getMembershipList().size());
 
             String view = ((MembershipSession) control).getMembership().getMembershipID().toString();
             System.out.println("View ID: " + view.split(";")[0].split(":")[1]);
+            String viewId = view.split(";")[0].split(":")[1];
 
+            StateManager.getInstance().setViewNumber(viewId);
             membersInGroup = ((MembershipSession) control).getMembership().getMembershipList().size();
             isBlocked = false;
         } catch (NotJoinedException e) {
@@ -346,18 +336,6 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 /*handleServerMessage((ServerMessage) protoMsg,
                         msg.getSenderAddress());*/
                 return null;
-            } else {
-                System.out.println("############### msg recieved ######## ");
-                try {
-                    protoMsg.unmarshal();
-                    byte[] bytes = protoMsg.getByteArray();
-                    System.out.println("Bytes:" + String.valueOf(bytes));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
-
             }
             return null;
         }
@@ -374,37 +352,33 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
         private void handleRquest(TupleMessage tupleMessage, SocketAddress addr) {
             try {
-                if(isIsolated) {
-                    System.out.println("server is isolated. Operations won't be executed........");
+                tupleMessage.unmarshal();
+
+                if (addr.equals(control.getLocalAddress())) {
+                    System.out.println("\tReceived request message. I'm the origin)");
+                    System.out.println("tuple msg type in request : " + tupleMessage.getType());
                 } else {
-                    tupleMessage.unmarshal();
-
-                    if (addr.equals(control.getLocalAddress())) {
-                        System.out.println("\tReceived request message. I'm the origin)");
-                        System.out.println("tuple msg type in request : " + tupleMessage.getType());
-                    } else {
-                        System.out.println("\tReceived request message");
-                    }
-                    System.out.println("Type: " + tupleMessage.getType());
-
-                    String[] tupleValues = tupleMessage.getTuple().getValues();
-                    switch (tupleMessage.getType()) {
-                        case WRITE:
-                            //tupleManager.writeTuple(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
-                            tupleManager.writeTuple(tupleMessage.getTuple());
-                            break;
-                        case TAKE:
-                            Tuple tuple = tupleManager.takeTuple(tupleMessage.getTuple());
-                            if(tuple != null) {
-                                sendResultsNotificationToClient(tuple, Type.TAKE);
-                            }
-                            break;
-                        //case READ not needed
-                        // because read request can be served locally. So other servers will not get the read request
-                    }
-                    System.out.println("Writing to the log");
-                    logManager.writeLog(++writeTakeSeqNo, tupleMessage);
+                    System.out.println("\tReceived request message");
                 }
+                System.out.println("Type: " + tupleMessage.getType());
+
+                String[] tupleValues = tupleMessage.getTuple().getValues();
+                switch (tupleMessage.getType()) {
+                    case WRITE:
+                        //tupleManager.writeTuple(new Tuple(tupleValues[0], tupleValues[1], tupleValues[2]));
+                        tupleManager.writeTuple(tupleMessage.getTuple());
+                        break;
+                    case TAKE:
+                        Tuple tuple = tupleManager.takeTuple(tupleMessage.getTuple());
+                        if(tuple != null) {
+                            sendResultsNotificationToClient(tuple, Type.TAKE);
+                        }
+                        break;
+                    //case READ not needed
+                    // because read request can be served locally. So other servers will not get the read request
+                }
+                System.out.println("Writing to the log");
+                logManager.writeLog( tupleMessage,StateManager.getInstance().getCurrentViewId());
 
             } catch (Exception e) {
                 e.printStackTrace();
