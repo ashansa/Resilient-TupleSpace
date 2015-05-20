@@ -1,19 +1,19 @@
 /**
  * Appia: Group communication and protocol composition framework library
  * Copyright 2007 University of Lisbon
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this logFile except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
- *
+ * limitations under the License.
+ * <p/>
  * Developer(s): Nuno Carvalho.
  */
 
@@ -140,7 +140,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
     public void write(Tuple tuple) {
         System.out.println("all and current : " + allNodes + " , " + membersInGroup);
-        if(membersInGroup > Math.ceil(allNodes/2)) {
+        if (membersInGroup > Math.ceil(allNodes / 2)) {
             TupleMessage msg = new TupleMessage(tuple, Type.WRITE);
             sendClientRequest(msg);
         }
@@ -159,9 +159,9 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
     public void take(Tuple template) {
         System.out.println("all and current : " + allNodes + " , " + membersInGroup);
-        if(membersInGroup > Math.ceil(allNodes/2)) {
+        if (membersInGroup > Math.ceil(allNodes / 2)) {
             Tuple tupleToTake = tupleManager.getTupleForTake(template, false);
-            if(tupleToTake != null) {
+            if (tupleToTake != null) {
                 TupleMessage msg = new TupleMessage(template, Type.TAKE);
                 sendClientRequest(msg);
             }
@@ -212,12 +212,17 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     public void onMembershipChange() {
         //System.out.println("MEMBERSHIP: "
         //		+ (System.currentTimeMillis() - viewChangeTime));
+        System.out.println("============ View ID========" + StateManager.getInstance().getCurrentViewId());
+
         try {
             System.out.println("-- NEW VIEW: "
                     + ((MembershipSession) control).getMembership().getMembershipID() + "\tSize: " + ((MembershipSession) control).getMembership().getMembershipList().size());
 
             String view = ((MembershipSession) control).getMembership().getMembershipID().toString();
             System.out.println("View ID: " + view.split(";")[0].split(":")[1]);
+            StateManager.getInstance().setViewNumber(view.split(";")[0].split(":")[1]);
+
+            //Need to start everything only after view is changed
 
             membersInGroup = ((MembershipSession) control).getMembership().getMembershipList().size();
         } catch (NotJoinedException e) {
@@ -320,7 +325,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                         break;
                     case TAKE:
                         Tuple tuple = tupleManager.takeTuple(tupleMessage.getTuple());
-                        if(tuple != null) {
+                        if (tuple != null) {
                             sendResultsNotificationToClient(tuple, Type.TAKE);
                         }
                         break;
@@ -328,7 +333,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                     // because read request can be served locally. So other servers will not get the read request
                 }
                 System.out.println("Writing to the log");
-                logManager.writeLog(++writeTakeSeqNo, tupleMessage);
+                logManager.writeLog(tupleMessage, StateManager.getInstance().getCurrentViewId());
 
             } catch (Exception e) {
                 e.printStackTrace();
