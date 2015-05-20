@@ -262,30 +262,23 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         //System.out.println("MEMBERSHIP: "
         //		+ (System.currentTimeMillis() - viewChangeTime));
         try {
-            System.out.println("-- NEW VIEW: "
-                    + ((MembershipSession) control).getMembership().getMembershipID() + "\tSize: " + ((MembershipSession) control).getMembership().getMembershipList().size());
+            System.out.println("-- NEW VIEW: " + ((MembershipSession) control).getMembership().getMembershipID() +
+                    "\tSize: " + ((MembershipSession) control).getMembership().getMembershipList().size());
 
-            List<SocketAddress> joinedMembers = ((MembershipSession) control).getMembership().getJoinedMembers();
-
-            System.out.println("joined members : " + joinedMembers.size());
-            for (SocketAddress member : joinedMembers) {
-                System.out.println("member: " + member.toString());
-            }
-
+            int noOfMembers = ((MembershipSession) control).getMembership().getMembershipList().size();
             String view = ((MembershipSession) control).getMembership().getMembershipID().toString();
             String viewIdString = view.split(";")[0].split(":")[1];
 
-            if (viewIdString != null) {
+            if (noOfMembers > 1 && viewIdString != null) { //membership > 1 to avoid the initial view which includes only that node
+                System.out.println("new view id string : " + viewIdString);
                 int newViewId = Integer.valueOf(viewIdString);
-                if(newViewId != 0) {
-                    System.out.println("View ID: " + newViewId);
-                    try {
-                        System.out.println("current view Id : " + StateManager.getInstance().getCurrentViewId());
-                        System.out.println("new view Id : " + newViewId);
-                        StateManager.getInstance().syncStates(((MembershipSession) control).getMembership().getMembershipList(), newViewId);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                System.out.println("View ID: " + newViewId);
+                try {
+                    System.out.println("current view Id : " + StateManager.getInstance().getCurrentViewId());
+                    System.out.println("new view Id : " + newViewId);
+                    StateManager.getInstance().syncStates(((MembershipSession) control).getMembership().getMembershipList(), newViewId);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
                 StateManager.getInstance().setViewNumber(newViewId);
                 System.out.println("now view Id : " + StateManager.getInstance().getCurrentViewId());
@@ -296,9 +289,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         } catch (NotJoinedException e) {
             e.printStackTrace();
             groupSession.close();
-        } /*catch (InterruptedException e) {
-            e.printStackTrace();
-        } */ catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

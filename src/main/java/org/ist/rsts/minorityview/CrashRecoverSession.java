@@ -16,14 +16,10 @@ public class CrashRecoverSession extends Session {
 
         if(!ServerGroup.isIsolated) {
             try {
-                System.out.println("sending msg. NOT Isolated..............");
                 event.go();
             } catch (AppiaEventException e) {
                 e.printStackTrace();
             }
-        } else {
-            System.out.println("Wont send msg. Isolated..............");
         }
-
     }
 }
