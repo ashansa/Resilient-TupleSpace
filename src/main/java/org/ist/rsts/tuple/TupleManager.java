@@ -3,6 +3,7 @@ package org.ist.rsts.tuple;
 import org.ist.rsts.ServerGroup;
 
 import java.io.IOException;
+import java.util.Random;
 import java.util.Vector;
 
 public class TupleManager {
@@ -42,8 +43,8 @@ public class TupleManager {
     public Tuple getTupleForTake(Tuple template, boolean isRetry) {
         Vector<Tuple> matches = tupleSpace.read(template);
         if (matches.size() > 0) {
-            //TODO: Select one common match to delete
-            Tuple toTake = matches.firstElement();
+            //select a random value to lower the chance of two clients selecting same concurrently
+            Tuple toTake = matches.get(new Random().nextInt(matches.size()-1));
             return toTake;
         } else {
             if (!isRetry) {
@@ -56,7 +57,6 @@ public class TupleManager {
     public Tuple takeTuple(Tuple tuple) {
         Vector<Tuple> matches = tupleSpace.read(tuple);
         if(matches.size() > 0) {
-            //TODO: Select one common match to delete
             Tuple toTake = matches.firstElement();
             tupleSpace.remove(toTake);
             return toTake;

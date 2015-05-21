@@ -10,12 +10,8 @@ import org.ist.rsts.tuple.Type;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -67,9 +63,11 @@ public class StateManager {
     public void syncStates(List<SocketAddress> memberList, int newId) throws IOException, InterruptedException {
         System.out.println("OLD...., NEW... : " + newId + "," + newId);
         if (viewId != newId - 1) { //I have not been in the last view. Need to transfer state
-            System.out.println("TODO.............. STATE TRANSFER.....");
-            /*requestLogs(memberList.get(new Random().nextInt(memberList.size())));
-            mergeLogs();*/
+            SocketAddress receiver = memberList.get(new Random().nextInt(memberList.size()));
+            System.out.println("TODO.............. STATE TRANSFER....." + receiver.toString());
+
+            requestLogs(receiver);
+            mergeLogs();
         } else {
             System.out.println("........... NO STATE TRANSFER needed......");
         }
@@ -82,18 +80,19 @@ public class StateManager {
         LogResponseMessage logRequestMsg = new LogResponseMessage(getLogs(requesterViewId));
         Message msg = groupSession.createMessage();
         logRequestMsg.marshal();
-        byte[] bytes = Constants.createMessageToSend(Constants.MessageType.TUPLE, logRequestMsg.getByteArray());
+        byte[] bytes = Constants.createMessageToSend(Constants.MessageType.LOG_RESPONSE, logRequestMsg.getByteArray());
         msg.setPayload(bytes);
 
+        System.out.println("....... going to send log response to :" + logRequestMessage.getSenderAddress());
         groupSession.send(msg, group, logRequestMessage.getSenderAddress(), null, null);
     }
 
     private void requestLogs(SocketAddress destination) throws IOException {
         System.out.println("view id ======" + viewId);
-        LogRequestMessage logRequestMsg = new LogRequestMessage(Integer.valueOf(viewId));
+        LogRequestMessage logRequestMsg = new LogRequestMessage(viewId);
         Message msg = groupSession.createMessage();
         logRequestMsg.marshal();
-        byte[] bytes = Constants.createMessageToSend(Constants.MessageType.TUPLE, logRequestMsg.getByteArray());
+        byte[] bytes = Constants.createMessageToSend(Constants.MessageType.LOG_REQUEST, logRequestMsg.getByteArray());
         msg.setPayload(bytes);
 
         groupSession.send(msg, group, destination, null, null);
@@ -107,7 +106,13 @@ public class StateManager {
             updateTuples(s.trim());
         }
 */
+        System.out.println("__________ received log from another__________ " + responseMessage);
         HashMap<Integer, String> logMap = responseMessage.getLogs();
+        System.out.println("___ log files ____" + logMap.size());
+        for (Integer viewId : logMap.keySet()) {
+            System.out.println("Id and log : " + viewId + ", " + logMap.get(viewId));
+        }
+
         for (Map.Entry<Integer, String> entry : logMap.entrySet()) {
             int viewId = entry.getKey();
             String logString = entry.getValue();
@@ -132,32 +137,13 @@ public class StateManager {
         }
     }
 
-    private void updateTuples(String logLine) {
-        //log line format
-        //seqNo:WRITE/TAKE;value1,value2,value3
-        System.out.println("log line >>>>>>> " + logLine);
-        try {
-            String operation = logLine.split(":")[1].split(";")[0];
-            String[] values = logLine.split(";")[1].split(",");
-            Tuple tuple = new Tuple(values[0], values[1], values[2]);
-
-            if (Type.WRITE.name().equals(operation)) {
-                System.out.println("...........WRITE update........");
-                tupleManager.writeTuple(tuple);
-            } else if (Type.TAKE.name().equals(operation)) {
-                System.out.println("...........TAKE update...........");
-                tupleManager.takeTuple(tuple);
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "could not update tuple for log line: " + logLine);
-        }
-    }
-
     private HashMap<Integer, String> getLogs(int requesterViewId) throws IOException {
         HashMap<Integer, String> logs = new HashMap<Integer, String>();
 
+        System.out.println("....... Requested Log View..... " + requesterViewId);
+        System.out.println("....... current View ID ..... " + getCurrentViewId());
         // travesing from previous view to current view.
-        for (int i = requesterViewId - 1; i < getCurrentViewId() + 1; i++) {
+        for (int i = requesterViewId; i < getCurrentViewId() + 1; i++) {
             logs.put(i, LogManager.getLogForView(i));
         }
         return logs;

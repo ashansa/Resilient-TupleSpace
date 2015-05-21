@@ -197,7 +197,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
             Tuple tupleToTake = tupleManager.getTupleForTake(template, false);
             if (tupleToTake != null) {
-                TupleMessage msg = new TupleMessage(template, Type.TAKE);
+                TupleMessage msg = new TupleMessage(tupleToTake, Type.TAKE);
                 sendClientRequest(msg);
             }
         } else {
@@ -268,10 +268,10 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             int noOfMembers = ((MembershipSession) control).getMembership().getMembershipList().size();
             String view = ((MembershipSession) control).getMembership().getMembershipID().toString();
             String viewIdString = view.split(";")[0].split(":")[1];
-
+            int newViewId = 0;
             if (noOfMembers > 1 && viewIdString != null) { //membership > 1 to avoid the initial view which includes only that node
                 System.out.println("new view id string : " + viewIdString);
-                int newViewId = Integer.valueOf(viewIdString);
+                newViewId = Integer.valueOf(viewIdString);
                 System.out.println("View ID: " + newViewId);
                 try {
                     System.out.println("current view Id : " + StateManager.getInstance().getCurrentViewId());
@@ -280,9 +280,10 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                StateManager.getInstance().setViewNumber(newViewId);
-                System.out.println("now view Id : " + StateManager.getInstance().getCurrentViewId());
             }
+
+            StateManager.getInstance().setViewNumber(newViewId);
+            System.out.println("now view Id : " + StateManager.getInstance().getCurrentViewId());
 
             membersInGroup = ((MembershipSession) control).getMembership().getMembershipList().size();
             isBlocked = false;
@@ -349,12 +350,18 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 return null;
             }
 
-            if (protoMsg instanceof LogResponseMessage) {
-                StateManager.getInstance().addToBlockingQueue((LogResponseMessage) protoMsg);
+            if (protoMsg instanceof LogRequestMessage) {
+                System.out.println("######### LogRequestMessage #############");
+                try {
+                    StateManager.getInstance().sendLogsToMerge((LogRequestMessage) protoMsg);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
-            if (protoMsg instanceof LogRequestMessage) {
-
+            if (protoMsg instanceof LogResponseMessage) {
+                System.out.println("######### LogResponseMessage #############");
+                StateManager.getInstance().addToBlockingQueue((LogResponseMessage) protoMsg);
             }
 
 

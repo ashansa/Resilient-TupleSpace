@@ -29,10 +29,15 @@ public class LogManager {
         this.logId = logId;
         this.logDirPath = "log" + File.separator + logId;
         File logDirectory = new File(logDirPath);
-        if (!logDirectory.exists()) {
-            logDirectory.mkdir();
+        if (logDirectory.exists()) {
+            File[] files = logDirectory.listFiles();
+            for (File file : files) {
+                file.delete();
+            }
+        } else {
+            boolean dirCreated = logDirectory.mkdirs();
+            System.out.println("========== log dir created ======== " + dirCreated);
         }
-
     }
 
     public void writeLog(TupleMessage tupleMessage, int viewId) {
@@ -124,19 +129,24 @@ public class LogManager {
 
     public static String getLogForView(int viewId) throws IOException {
 
-        FileReader reader = new FileReader(new File(logDirPath.concat(File.separator).
-                concat("log-").concat(logId).concat("-").concat(String.valueOf(viewId))));
-
-        BufferedReader br = new BufferedReader(reader);
         String log = "";
-        String line;
+        File logForView = new File(logDirPath.concat(File.separator).concat("log-").concat(logId).concat("-").
+                concat(String.valueOf(viewId)));
+        if(logForView.exists()) {
+            FileReader reader = new FileReader(logForView);
 
-        while ((line = br.readLine()) != null) {
-            log = log + line + "\n";
+            BufferedReader br = new BufferedReader(reader);
+
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                log = log + line + "\n";
+            }
+
+            br.close();
         }
 
-        br.close();
-        System.out.println("log ====>" + log);
+        System.out.println("log for view ====>" + viewId + "    :" + log);
         return log;
     }
 }
