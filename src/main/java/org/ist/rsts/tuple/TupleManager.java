@@ -45,7 +45,7 @@ public class TupleManager {
 
     public Tuple getTupleForTake(Tuple template, boolean isRetry) {
         Vector<Tuple> matches = tupleSpace.getMatchingTuples(template);
-        if (matches.size() > 0) {
+        if (matches.size() > 1) {
             //select a random value to lower the chance of two clients selecting same concurrently
             Tuple toTake = matches.get(new Random().nextInt(matches.size()-1));
             return toTake;
