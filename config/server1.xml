@@ -37,6 +37,9 @@
         <session name="vsl" sharing="private">
             <protocol>net.sf.appia.protocols.group.sync.VSyncLayer</protocol>
         </session>
+        <session name="loopback" sharing="private">
+            <protocol>net.sf.appia.protocols.loopBack.LoopBackLayer</protocol>
+        </session>
         <!--<session name="total" sharing="private">
             <protocol>net.sf.appia.protocols.total.sequencer.TotalSequencerLayer</protocol>
         </session>-->

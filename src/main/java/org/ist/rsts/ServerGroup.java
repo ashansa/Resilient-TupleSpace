@@ -182,7 +182,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     }
 
     public void take(Tuple template) {
-        System.out.println("all and current : " + allNodes + " , " + membersInGroup);
+       /* System.out.println("all and current : " + allNodes + " , " + membersInGroup);
         if (membersInGroup > Math.ceil(allNodes / 2)) {
 
             if (isBlocked)
@@ -205,7 +205,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             }
         } else {
             System.out.println("You are in a minority partition. Cannot execute write request.");
-        }
+        }*/
     }
 
     public void take2(Tuple template) {
@@ -266,6 +266,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             tupleMsg.marshal();
             byte[] bytes = Constants.createMessageToSend(Constants.MessageType.TUPLE, tupleMsg.getByteArray());
             msg.setPayload(bytes);
+            System.out.println("====== sending client request : BCAST......");
             groupSession.send(msg, group, null, null);
         } catch (IOException e) {
             e.printStackTrace();
@@ -403,6 +404,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 return null;
 
             if (protoMsg instanceof TupleMessage) {
+                System.out.println("######### TupleMessage #############");
                 handleRquest((TupleMessage) protoMsg, msg.getSenderAddress());
                 return null;
 
@@ -476,12 +478,12 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                         logManager.writeLog(tupleMessage, StateManager.getInstance().getCurrentViewId());
                         break;
                     case TAKE:
-                        Tuple tuple = tupleManager.takeTuple(tupleMessage.getTuple());
+                        /*Tuple tuple = tupleManager.takeTuple(tupleMessage.getTuple());
                         if (tuple != null) {
                             sendResultsNotificationToClient(tuple, Type.TAKE);
                         }
                         System.out.println("Writing to the log");
-                        logManager.writeLog(tupleMessage, StateManager.getInstance().getCurrentViewId());
+                        logManager.writeLog(tupleMessage, StateManager.getInstance().getCurrentViewId());*/
                         break;
                     case TAKE2:
                         tupleManager.addToTakeQueue(tupleMessage);
@@ -490,9 +492,6 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                     //case READ not needed
                     // because getMatchingTuples request can be served locally. So other servers will not get the getMatchingTuples request
                 }
-                System.out.println("Writing to the log");
-                logManager.writeLog(tupleMessage, StateManager.getInstance().getCurrentViewId());
-
 
             } catch (Exception e) {
                 e.printStackTrace();

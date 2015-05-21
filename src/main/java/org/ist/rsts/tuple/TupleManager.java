@@ -6,6 +6,9 @@ import org.ist.rsts.TakeResponseMessage;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class TupleManager {
 
@@ -13,9 +16,10 @@ public class TupleManager {
     //TODO: can we have > 1 pending req? since we block when there is a pending req
     Vector<Tuple> pendingReadRequests = new Vector<Tuple>();
     Vector<Tuple> pendingTakeRequests = new Vector<Tuple>();
-    Vector<Tuple> pendingTakeDecisions = new Vector<Tuple>();
+   // Vector<Tuple> pendingTakeDecisions = new Vector<Tuple>();
     ServerGroup server;
     public HashMap<UUID, Vector<TakeResponseMessage>> takeResponses = new HashMap<UUID, Vector<TakeResponseMessage>>();
+    private ArrayBlockingQueue<TupleMessage> takeTemplatesQueue = new ArrayBlockingQueue<TupleMessage>(1000);
 
     public TupleManager(ServerGroup server) {
         this.server = server;
@@ -28,8 +32,8 @@ public class TupleManager {
             servePendingReadRequests(tuple);
         if(pendingTakeRequests.size() > 0)
             servePendingTakeRequests(tuple);
-        if(pendingTakeDecisions.size() > 0)
-            servePendingTakeDecisions(tuple);
+        /*if(pendingTakeDecisions.size() > 0)
+            servePendingTakeDecisions(tuple);*/
     }
 
     public Tuple readTuple(Tuple template) {
@@ -43,7 +47,7 @@ public class TupleManager {
         }
     }
 
-    public Tuple getTupleForTake(Tuple template, boolean isRetry) {
+   /* public Tuple getTupleForTake(Tuple template, boolean isRetry) {
         Vector<Tuple> matches = tupleSpace.getMatchingTuples(template);
         if (matches.size() > 1) {
             //select a random value to lower the chance of two clients selecting same concurrently
@@ -55,41 +59,54 @@ public class TupleManager {
             }
             return null;
         }
-    }
+    }*/
 
     public Tuple takeTuple(Tuple tuple) {
+        System.out.println("############## tuple space size 1 : " + tupleSpace.tupleSize());
         //need to check whether the tuple write has been received to this node before removing
         Vector<Tuple> matches = tupleSpace.getMatchingTuples(tuple);
         if(matches.size() > 0) {
+            System.out.println("--------  matches found. going to take take.......");
             Tuple toTake = matches.firstElement();
             tupleSpace.remove(toTake);
+            System.out.println("############## tuple space size 2 : " + tupleSpace.tupleSize());
+
             return toTake;
         } else {
+            System.out.println("-------- no matches found. write not received yet. add to pending take.......");
             pendingTakeRequests.add(tuple);
+            System.out.println("############## tuple space size 2 : " + tupleSpace.tupleSize());
             return null;
         }
     }
 
     public void processTakeOperation(Vector<TakeResponseMessage> takeResponseMessages) {
         Tuple tupleToTake = decideTupleToTake(takeResponseMessages);
-        System.out.println("......DECIDED TUPLE TO TAKE :");
-        for (String s : tupleToTake.getValues()) {
-            System.out.println(s);
+        if(tupleToTake != null) {
+            System.out.println("......DECIDED TUPLE TO TAKE :");
+            for (String s : tupleToTake.getValues()) {
+                System.out.println(s);
+            }
+            System.out.println(".........................");
+            System.out.println(".........................");
+            takeTuple(tupleToTake);
         }
-        System.out.println(".........................");
-        System.out.println(".........................");
-        takeTuple(tupleToTake);
+        System.out.println("take operation processed........");
     }
 
     private Tuple decideTupleToTake(Vector<TakeResponseMessage> takeResponseMessages) {
-        Tuple tupleToTake = null;
         Vector<Tuple> allMatchingTuples = new Vector<Tuple>();
         for (TakeResponseMessage response : takeResponseMessages) {
             allMatchingTuples.addAll(response.getMatchingTuples());
         }
-        //TODO............ do a sort and get the answer
-        Collections.sort(allMatchingTuples);
-        return allMatchingTuples.get(0);
+        if(allMatchingTuples.size() > 0) {
+            Collections.sort(allMatchingTuples);
+            return allMatchingTuples.get(0);
+        } else {
+            //no one has a matching tuple for the take
+            return null;
+        }
+
     }
 
     public void addTakeResponse(TakeResponseMessage responseMessage) {
@@ -106,7 +123,7 @@ public class TupleManager {
         takeResponses.put(takeUUID, receivedResponses);
     }
 
-    private void servePendingTakeDecisions(Tuple newTuple) {
+    /*private void servePendingTakeDecisions(Tuple newTuple) {
         //this new tuple may have been removed due to a pending take request. So check exist too
         for (int i = 0; i < pendingTakeDecisions.size(); i++) {
             boolean match = isAMatch(pendingTakeDecisions.get(i), newTuple);
@@ -119,17 +136,15 @@ public class TupleManager {
                 }
             }
         }
-    }
+    }*/
 
     public Vector<Tuple> getMatchingTuples(Tuple template) {
         return tupleSpace.getMatchingTuples(template);
     }
 
-    private ArrayBlockingQueue<TupleMessage> takeTemplatesQueue = new ArrayBlockingQueue<TupleMessage>(1000);
-
-    public void addToTakeQueue(TupleMessage msg) {
+    public void addToTakeQueue(TupleMessage msg) throws InterruptedException {
         System.out.println("........ adding tuple msg to queue : " +msg.getUUID() + " , " + msg.getTuple().getValues());
-        takeTemplatesQueue.add(msg);
+        takeTemplatesQueue.put(msg);
     }
 
     private void servePendingReadRequests(Tuple newTuple) {
@@ -183,11 +198,12 @@ public class TupleManager {
 
         @Override
         public void run() {
-            System.out.println("+++++++++++++++++ TAKE CONSUMER STARTED ++++++++++++++");
+            //System.out.println("+++++++++++++++++ TAKE CONSUMER STARTED ++++++++++++++");
             while (true){
                 try {
+                    //System.out.println("going to take from queue....");
                     TupleMessage takeMsg = takeTemplatesQueue.take();
-                    System.out.println("....... ONE TAKE MESSAGE TAKEN FROM QUEUE..........");
+                    //System.out.println("....... ONE TAKE MESSAGE TAKEN FROM QUEUE..........");
                     UUID uuidOfTake = takeMsg.getUUID();
                     Vector<Tuple> matchingTuples = getMatchingTuples(takeMsg.getTuple());
                     server.bcastMatchingTuplesForTake(matchingTuples, uuidOfTake);
@@ -196,7 +212,7 @@ public class TupleManager {
                         //temp sleep
                         Thread.sleep(2000);
                     }
-                    System.out.println("%%%%%%%%%%%% all responses received %%%%%%%%");
+                    //System.out.println("%%%%%%%%%%%% all responses received %%%%%%%%");
                     Vector<TakeResponseMessage> responses = takeResponses.get(uuidOfTake);
                     processTakeOperation(responses);
 

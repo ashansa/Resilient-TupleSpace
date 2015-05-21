@@ -88,6 +88,7 @@ public class Client extends Thread {
 
     public void sendTakeRequest(String value1, String value2, String value3) throws IOException, InterruptedException {
         try{
+            System.out.println("Grabbing lock in take");
             lock.lock();
             server.take2(new Tuple(value1, value2, value3));
             System.out.println("take : wait.....");
@@ -146,6 +147,7 @@ public class Client extends Thread {
         System.out.println("To isolate (or recover) node - type isolate (recover)");
 
         while (true) {
+            System.out.println("Operations: write,read,take");
             try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(
                         System.in));
@@ -165,8 +167,8 @@ public class Client extends Thread {
                             System.out.println("Sending tuple write request");
                             sendWriteRequest(values[0], values[1], values[2]);
 
-                        } else if (line.contains("getMatchingTuples")) {
-                            System.out.println("Sending tuple getMatchingTuples request");
+                        } else if (line.contains("read")) {
+                            System.out.println("Sending tuple read request");
                             try {
                                 sendReadRequest(values[0], values[1], values[2]);
                             } catch (InterruptedException e) {
