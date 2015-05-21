@@ -8,6 +8,7 @@ import org.ist.rsts.tuple.Tuple;
 import org.ist.rsts.tuple.TupleManager;
 import org.ist.rsts.tuple.Type;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.*;
@@ -106,6 +107,20 @@ public class StateManager {
             updateTuples(s.trim());
         }
 */
+
+        String myLastViewLog = null;
+        try {
+            myLastViewLog = logManager.getLogForView(viewId);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("========== UNDO MY LAST LOG FAILED. Couldn't get last log ======");
+        }
+        if(myLastViewLog != null) {
+            //undo operations that he has done in his last view
+            //TODO: do this....
+        }
+
+        //apply operations taken received
         System.out.println("__________ received log from another__________ " + responseMessage);
         HashMap<Integer, String> logMap = responseMessage.getLogs();
         System.out.println("___ log files ____" + logMap.size());

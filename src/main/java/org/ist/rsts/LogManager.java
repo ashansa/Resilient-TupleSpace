@@ -55,15 +55,6 @@ public class LogManager {
     }
 
 
-    public File getLogFile() {
-        throw new UnsupportedOperationException();
-    }
-
-    public String getLogDirPath() {
-        return logDirPath;
-    }
-
-
     private class LogWriteTask implements Runnable {
         private int viewId;
         private String logId;
