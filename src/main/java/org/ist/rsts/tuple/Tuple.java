@@ -2,7 +2,7 @@ package org.ist.rsts.tuple;
 
 import java.io.Serializable;
 
-public class Tuple implements Serializable {
+public class Tuple implements Serializable, Comparable<Tuple> {
 
     private String value1;
     private String value2;
@@ -16,5 +16,12 @@ public class Tuple implements Serializable {
 
     public String[] getValues() {
         return new String[]{value1, value2, value3};
+    }
+
+    @Override
+    public int compareTo(Tuple o) {
+        String thisTupleString = value1.concat(value2).concat(value3);
+        String receivedTupleString = o.value1.concat(o.value2).concat(o.value3);
+        return thisTupleString.compareTo(receivedTupleString);
     }
 }

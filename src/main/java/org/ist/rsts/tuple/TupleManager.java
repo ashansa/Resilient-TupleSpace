@@ -72,6 +72,12 @@ public class TupleManager {
 
     public void processTakeOperation(Vector<TakeResponseMessage> takeResponseMessages) {
         Tuple tupleToTake = decideTupleToTake(takeResponseMessages);
+        System.out.println("......DECIDED TUPLE TO TAKE :");
+        for (String s : tupleToTake.getValues()) {
+            System.out.println(s);
+        }
+        System.out.println(".........................");
+        System.out.println(".........................");
         takeTuple(tupleToTake);
     }
 
@@ -82,6 +88,7 @@ public class TupleManager {
             allMatchingTuples.addAll(response.getMatchingTuples());
         }
         //TODO............ do a sort and get the answer
+        Collections.sort(allMatchingTuples);
         return allMatchingTuples.get(0);
     }
 
@@ -189,6 +196,7 @@ public class TupleManager {
                         //temp sleep
                         Thread.sleep(2000);
                     }
+                    System.out.println("%%%%%%%%%%%% all responses received %%%%%%%%");
                     Vector<TakeResponseMessage> responses = takeResponses.get(uuidOfTake);
                     processTakeOperation(responses);
 

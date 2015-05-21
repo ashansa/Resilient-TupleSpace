@@ -38,6 +38,8 @@ import java.io.InputStream;
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.Vector;
 
 /**
  * This class defines a ServerOpenGroupTest. This example shows how to use and
