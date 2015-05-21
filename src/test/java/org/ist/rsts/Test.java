@@ -1,5 +1,6 @@
 package org.ist.rsts;
 
+import org.ist.rsts.tuple.Tuple;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.Node;
@@ -28,7 +29,6 @@ public class Test {
     public void testCreateGroup() throws Exception {
 
         //GossipServer server = new GossipServer();
-
         createConfig();
 
         ServerGroup server1 = new ServerGroup();
@@ -39,9 +39,13 @@ public class Test {
         server2.createServerGroup("config/server-modified.xml", "2");
         server3.createServerGroup("config/server-modified.xml", "3");
 
+        System.out.println("Starting servers");
+
         server1.start();
         server2.start();
         server3.start();
+
+        System.out.println("Started servers");
 
        Thread.sleep(5000);
 
@@ -63,8 +67,14 @@ public class Test {
         takeTest.start();
         System.out.println("....... take test started .........");
 
-        writeTest.join();
-        takeTest.join();
+        //writeTest.join();
+        //takeTest.join();
+
+        Thread.sleep(3000);
+
+        Thread readTest =new ReadTest(new ServerGroup[]{server1, server2, server3});
+        readTest.start();
+        readTest.join();
 
        /* System.out.println("huuuuuu");
         for (int i = 0; i < 100; i++) {
@@ -143,16 +153,15 @@ public class Test {
             this.servers = servers;
         }
         public void run() {
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 1; i++) {
                 try {
                     int no = rand.nextInt(2);
-                    servers[no].getClient().sendReadRequest("*", "*", String.valueOf(i));
-
+                   // servers[no].getClient().sendReadRequest("*", "*", "*");
+                    Tuple tuple =    servers[no].read(new Tuple("*", "*", "*"));
                     // server1.getClient().sendReadRequest("*","*","*");;
                     System.out.println("Read tuple");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
+
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -167,7 +176,7 @@ public class Test {
             this.servers = servers;
         }
         public void run() {
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 99; i++) {
                 try {
                     int no = rand.nextInt(2);
                     servers[no].getClient().sendTakeRequest("*", "*", String.valueOf(i));

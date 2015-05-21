@@ -36,7 +36,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
-import java.util.List;
 import java.util.Properties;
 
 /**
@@ -68,6 +67,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     int allNodes = -1;
     boolean isBlocked = false;
     static int writeTakeSeqNo = 0;
+    SocketAddress localAddress;
     public static boolean isIsolated = false;
 
     private void init(ControlSession control, DataSession grSession, Service gr, String logId) throws IOException {
@@ -112,6 +112,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             e.printStackTrace();
         }
     }
+
 
     public void createServerGroup(String configFile, String logId) throws IOException {
         ProtocolFactory protocolFactory = new AppiaProtocolFactory();
@@ -268,6 +269,9 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             int noOfMembers = ((MembershipSession) control).getMembership().getMembershipList().size();
             String view = ((MembershipSession) control).getMembership().getMembershipID().toString();
             String viewIdString = view.split(";")[0].split(":")[1];
+            int localId = ((MembershipSession) control).getMembership().getLocalRank();
+            localAddress = ((MembershipSession) control).getMembership().getMemberAddress(localId);
+            System.out.println("My local Adress is ==========>>>>>>>" + localAddress);
             int newViewId = 0;
             if (noOfMembers > 1 && viewIdString != null) { //membership > 1 to avoid the initial view which includes only that node
                 System.out.println("new view id string : " + viewIdString);
@@ -276,8 +280,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 try {
                     System.out.println("current view Id : " + StateManager.getInstance().getCurrentViewId());
                     System.out.println("new view Id : " + newViewId);
-                    StateManager.getInstance().syncStates(((MembershipSession) control).getMembership().getMembershipList(), newViewId);
-                } catch (InterruptedException e) {
+                   // StateManager.getInstance().syncStates(((MembershipSession) control).getMembership().getMembershipList(), newViewId);
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
