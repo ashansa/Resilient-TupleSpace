@@ -54,7 +54,7 @@ public abstract class ProtocolMessage {
 
 	public void unmarshal() throws IOException, ClassNotFoundException{
 		if(msgBuffer == null || msgBuffer.length == 0)
-			throw new IOException("Nothing to read in the buffer");
+			throw new IOException("Nothing to getMatchingTuples in the buffer");
 		MessageInputStream mis = new MessageInputStream(msgBuffer);
 		ObjectInputStream is = mis.getInputStream();
 		readUserData(is);

@@ -72,9 +72,9 @@ public class Client extends Thread {
             lock.lock();
             Tuple result = server.read(new Tuple(value1, value2, value3));
             if(result == null) {
-                System.out.println("read: waiting..........");
+                System.out.println("getMatchingTuples: waiting..........");
                 readBlock.await();
-                System.out.println("read: wait finish.......");
+                System.out.println("getMatchingTuples: wait finish.......");
             } else {
                 String[] values = result.getValues();
                 System.out.println("result :" + values[0] + "," + values[1] + "," + values[2]);
@@ -89,7 +89,7 @@ public class Client extends Thread {
     public void sendTakeRequest(String value1, String value2, String value3) throws IOException, InterruptedException {
         try{
             lock.lock();
-            server.take(new Tuple(value1, value2, value3));
+            server.take2(new Tuple(value1, value2, value3));
             System.out.println("take : wait.....");
             takeBlock.await();
             System.out.println("take : wait finish.......");
@@ -110,7 +110,7 @@ public class Client extends Thread {
             try{
                 lock.lock();
                 readBlock.signal();
-                System.out.println("read signaled......");
+                System.out.println("getMatchingTuples signaled......");
             } finally {
                 lock.unlock();
             }
@@ -141,7 +141,7 @@ public class Client extends Thread {
         String line = null;
 
         System.out.println("eg: write:1,2,3");
-        System.out.println("    read:*,2,3");
+        System.out.println("    getMatchingTuples:*,2,3");
         System.out.println("    take:*,2,3");
         System.out.println("To isolate (or recover) node - type isolate (recover)");
 
@@ -165,8 +165,8 @@ public class Client extends Thread {
                             System.out.println("Sending tuple write request");
                             sendWriteRequest(values[0], values[1], values[2]);
 
-                        } else if (line.contains("read")) {
-                            System.out.println("Sending tuple read request");
+                        } else if (line.contains("getMatchingTuples")) {
+                            System.out.println("Sending tuple getMatchingTuples request");
                             try {
                                 sendReadRequest(values[0], values[1], values[2]);
                             } catch (InterruptedException e) {

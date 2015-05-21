@@ -15,7 +15,7 @@ public class TupleSpace {
         return true;
     }
 
-    public Vector<Tuple> read(Tuple template) {
+    public Vector<Tuple> getMatchingTuples(Tuple template) {
         System.out.println("reading values");
         Vector<Tuple> matches = new Vector<Tuple>();
         String[] templateElements = template.getValues();

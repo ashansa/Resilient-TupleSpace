@@ -2,7 +2,7 @@ package org.ist.rsts.tuple;
 
 import java.io.Serializable;
 
-public class Tuple implements Serializable{
+public class Tuple implements Serializable {
 
     private String value1;
     private String value2;

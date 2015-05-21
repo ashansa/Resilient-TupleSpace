@@ -1,6 +1,6 @@
 package org.ist.rsts.tuple;
 
 public enum Type {
-    WRITE, READ, TAKE, REPLY;
+    WRITE, READ, TAKE, TAKE2, REPLY;
 
 }
