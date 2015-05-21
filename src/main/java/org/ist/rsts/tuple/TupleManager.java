@@ -70,7 +70,11 @@ public class TupleManager {
             Tuple toTake = matches.firstElement();
             tupleSpace.remove(toTake);
             System.out.println("############## tuple space size 2 : " + tupleSpace.tupleSize());
-
+            try {
+                server.sendResultsNotificationToClient(toTake, Type.TAKE);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             return toTake;
         } else {
             System.out.println("-------- no matches found. write not received yet. add to pending take.......");
@@ -193,6 +197,8 @@ public class TupleManager {
         return false;
     }
 
+    final Lock lock = new ReentrantLock();
+    final Condition notEmpty  = lock.newCondition();
 
     private class TakeConsumer implements Runnable{
 
