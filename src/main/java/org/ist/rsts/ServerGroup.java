@@ -24,10 +24,7 @@ import net.sf.appia.jgcs.AppiaProtocolFactory;
 import net.sf.appia.jgcs.AppiaService;
 import net.sf.jgcs.*;
 import net.sf.jgcs.membership.*;
-import org.ist.rsts.tuple.Tuple;
-import org.ist.rsts.tuple.TupleManager;
-import org.ist.rsts.tuple.TupleMessage;
-import org.ist.rsts.tuple.Type;
+import org.ist.rsts.tuple.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -454,10 +451,10 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
         private void handleRquest(TupleMessage tupleMessage, SocketAddress addr) {
             try {
-                System.out.println("........... received tuple msg................");
-                System.out.println("........... going to unmarshal................");
+//                System.out.println("........... received tuple msg................");
+//                System.out.println("........... going to unmarshal................");
                 tupleMessage.unmarshal();
-                System.out.println("...........  unmarshaled................");
+//                System.out.println("...........  unmarshaled................");
 
                 SocketAddress myAddress;
                 if(localAddress != null) {
@@ -494,5 +491,9 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             }
         }
     } // end of class GroupMessageListener
+
+    public TupleSpace getTupleSpace(){
+       return tupleManager.getTupleSpace();
+    }
 
 }

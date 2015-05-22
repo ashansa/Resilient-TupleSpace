@@ -235,9 +235,9 @@ public class TupleManager {
 
         private boolean isResponsesComplete(UUID uuid) {
             Vector<TakeResponseMessage> responses = takeResponses.get(uuid);
-            System.out.println("responses, members in grp : " +responses + " , " + server.getMembersInGroup());
-            if(responses != null)
-                System.out.println("no of responses : " + responses.size());
+            //System.out.println("responses, members in grp : " +responses + " , " + server.getMembersInGroup());
+            //if(responses != null)
+              //  System.out.println("no of responses : " + responses.size());
 
 
             if(responses != null && responses.size() == server.getMembersInGroup())
@@ -245,5 +245,10 @@ public class TupleManager {
             else
                 return false;
         }
+    }
+
+    //this will be used for tests to show status
+    public TupleSpace getTupleSpace(){
+      return tupleSpace;
     }
 }

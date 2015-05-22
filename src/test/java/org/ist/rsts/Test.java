@@ -1,6 +1,6 @@
 package org.ist.rsts;
 
-import org.ist.rsts.tuple.Tuple;
+import org.junit.Assert;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.Node;
@@ -18,36 +18,54 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class Test {
-    public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException, TransformerException {
+
+    long takeTestTime;
+    long writeTestTime;
+
+    int noOfNodes = 4;
+    ArrayList<ServerGroup> servers = new ArrayList<ServerGroup>();
+    private long readTestTime;
+
+   /* public static void main(String[] args) throws IOException, ParserConfigurationException, SAXException, TransformerException {
         new Test().createConfig();
-    }
+    }*/
 
     @org.junit.Test
     public void testCreateGroup() throws Exception {
 
+        System.out.println("created config");
         //GossipServer server = new GossipServer();
         createConfig();
 
-        ServerGroup server1 = new ServerGroup();
-        ServerGroup server2 = new ServerGroup();
-        ServerGroup server3 = new ServerGroup();
+        System.out.println("Starting servers");
+        for (int i = 0; i < noOfNodes; i++) {
+            ServerGroup server = new ServerGroup();
+            servers.add(server);
+            server.createServerGroup("config/server-modified.xml", String.valueOf(i + 1));
+            server.start();
+        }
 
-        server1.createServerGroup("config/server-modified.xml", "1");
+        /*ServerGroup server1 = new ServerGroup();
+        ServerGroup server2 = new ServerGroup();
+        ServerGroup server3 = new ServerGroup();*/
+
+       /* server1.createServerGroup("config/server-modified.xml", "1");
         server2.createServerGroup("config/server-modified.xml", "2");
         server3.createServerGroup("config/server-modified.xml", "3");
+*/
 
-        System.out.println("Starting servers");
 
-        server1.start();
+       /* server1.start();
         server2.start();
-        server3.start();
+        server3.start();*/
 
         System.out.println("Started servers");
 
-       Thread.sleep(5000);
+        Thread.sleep(5000);
 
         /*WriteTest writeTest = new WriteTest(new ServerGroup[]{server1, server2, server3});
         writeTest.start();
@@ -60,21 +78,42 @@ public class Test {
         readTest.join();
 */
 
-        WriteTest writeTest = new WriteTest(new ServerGroup[]{server1, server2, server3});
+        WriteTest writeTest = new WriteTest(servers);
         writeTest.start();
         System.out.println("....... write test started .........");
-        TakeTest takeTest = new TakeTest(new ServerGroup[]{server1, server2, server3});
-        takeTest.start();
+        TakeTest takeTest = new TakeTest( servers);
+        //takeTest.start();
         System.out.println("....... take test started .........");
 
-        //writeTest.join();
+        ReadTest readTest = new ReadTest( servers);
+        readTest.start();
+        System.out.println("....... read test started .........");
+
+        writeTest.join();
         //takeTest.join();
 
-        Thread.sleep(3000);
-
-        Thread readTest =new ReadTest(new ServerGroup[]{server1, server2, server3});
-        readTest.start();
         readTest.join();
+
+        while (servers.get(0).getTupleSpace().tupleSize()!=100){
+        }
+
+
+        System.out.println("=====================================================");
+        readTest.run();
+
+        System.out.println("time for writes " + writeTestTime + "-" + writeTestTime / 100);
+        System.out.println("time for takes "+takeTestTime +"-"+takeTestTime/50);
+        System.out.println("time for read " + readTestTime + "-" + readTestTime / 100);
+
+       for (int i = 0; i <noOfNodes ; i++) {
+            Assert.assertEquals(100, servers.get(i).getTupleSpace().tupleSize());
+            System.out.println("Tuple size in Server "+i +" "+ servers.get(i).getTupleSpace().tupleSize());
+        }
+
+
+
+
+
 
        /* System.out.println("huuuuuu");
         for (int i = 0; i < 100; i++) {
@@ -113,82 +152,98 @@ public class Test {
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 
         DocumentType doctype = doc.getDoctype();
-        if(doctype != null) {
+        if (doctype != null) {
             transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, doctype.getPublicId());
             transformer.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, doctype.getSystemId());
         }
 
 
-    DOMSource source = new DOMSource(doc);
-    StreamResult result = new StreamResult(new File("config/server-modified.xml"));
-    transformer.transform(source,result);
-}
+        DOMSource source = new DOMSource(doc);
+        StreamResult result = new StreamResult(new File("config/server-modified.xml"));
+        transformer.transform(source, result);
+    }
 
     public class WriteTest extends Thread {
 
-        ServerGroup[] servers;
+        ArrayList<ServerGroup> servers;
         Random rand = new Random();
-        public WriteTest(ServerGroup[] servers) {
+
+        public WriteTest(ArrayList<ServerGroup> servers) {
             this.servers = servers;
         }
+
         public void run() {
+            long startTime = System.nanoTime();
             for (int i = 0; i < 100; i++) {
                 try {
-                int no = rand.nextInt(2);
-                    servers[no].getClient().sendWriteRequest("1", "2", String.valueOf(i));
-                     // server1.getClient().sendReadRequest("*","*","*");;
+                    int no = rand.nextInt(noOfNodes);
+                    servers.get(no).getClient().sendWriteRequest("1", "2", String.valueOf(i));
+                    //servers[no].write(new Tuple("1", "2", String.valueOf(i)));
+                    // server1.getClient().sendReadRequest("*","*","*");;
                     System.out.println("Writing tuple");
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
+            long endTime = System.nanoTime();
+            writeTestTime = endTime - startTime;
         }
     }
 
     public class ReadTest extends Thread {
 
-        ServerGroup[] servers;
+        ArrayList<ServerGroup> servers;
         Random rand = new Random();
-        public ReadTest(ServerGroup[] servers) {
+
+        public ReadTest(ArrayList<ServerGroup> servers) {
             this.servers = servers;
         }
+
         public void run() {
-            for (int i = 0; i < 1; i++) {
+            long startTime = System.nanoTime();
+            for (int i = 0; i < 100; i++) {
                 try {
-                    int no = rand.nextInt(2);
-                   // servers[no].getClient().sendReadRequest("*", "*", "*");
-                    Tuple tuple =    servers[no].read(new Tuple("*", "*", "*"));
+                    int no = rand.nextInt(noOfNodes);
+                     servers.get(no).getClient().sendReadRequest("*", "*", "*");
+                    //Tuple tuple = servers.get(no).read(new Tuple("*", "*", "*"));
                     // server1.getClient().sendReadRequest("*","*","*");;
-                    System.out.println("Read tuple");
+                    //System.out.println("Read tuple =========>" + tuple.getValues());
 
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
+            long endTime = System.nanoTime();
+            readTestTime = endTime - startTime;
         }
     }
 
     public class TakeTest extends Thread {
 
-        ServerGroup[] servers;
+        ArrayList<ServerGroup> servers;
         Random rand = new Random();
-        public TakeTest(ServerGroup[] servers) {
+
+        public TakeTest(ArrayList<ServerGroup> servers) {
             this.servers = servers;
         }
-        public void run() {
-            for (int i = 0; i < 99; i++) {
-                try {
-                    int no = rand.nextInt(2);
-                    servers[no].getClient().sendTakeRequest("*", "*", String.valueOf(i));
 
+        public void run() {
+
+            long startTime = System.nanoTime();
+            for (int i = 0; i < 50; i++) {
+                try {
+                    int no = rand.nextInt(noOfNodes);
+                    servers.get(no).getClient().sendTakeRequest("*", "*", String.valueOf(i));
+                    //servers[no].take(new Tuple("*", "*", String.valueOf(i)));
+                    //Thread.sleep(500);
                     // server1.getClient().sendReadRequest("*","*","*");;
-                    System.out.println("Take tuple");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
+                    //System.out.println("Take tuple");
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
+            long endTime = System.nanoTime();
+            takeTestTime = endTime - startTime;
         }
     }
 }
