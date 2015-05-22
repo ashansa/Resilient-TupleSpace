@@ -245,11 +245,13 @@ public class StateManager {
 
         @Override
         public void run() {
+            ArrayList<SocketAddress> otherMembers = new ArrayList<SocketAddress>();
+            for (SocketAddress member : memberList) {
+                if(!member.equals(server.getLocalAddress()))
+                    otherMembers.add(member);
+            }
             try {
-                if(memberList.contains(server.getLocalAddress())) {
-                    memberList.remove(server.getLocalAddress());
-                }
-                SocketAddress receiver = memberList.get(new Random().nextInt(memberList.size()));
+                SocketAddress receiver = otherMembers.get(new Random().nextInt(otherMembers.size()));
                 System.out.println("TODO.............. STATE TRANSFER....." + receiver.toString());
                 requestLogs(receiver, lastPresentViewId);
                 System.out.println("Logs are requested");
