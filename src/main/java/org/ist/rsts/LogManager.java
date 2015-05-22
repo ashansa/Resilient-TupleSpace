@@ -45,8 +45,8 @@ public class LogManager {
         Type type = null;
         if (Type.WRITE.name().equals(operation))
             type = Type.WRITE;
-        else if (Type.TAKE2.name().equals(operation))
-            type = Type.TAKE2;
+        else if (Type.TAKE.name().equals(operation))
+            type = Type.TAKE;
 
         executor.execute(new LogWriteTask(viewId, logId, tuple, type, logDirPath));
     }

@@ -33,7 +33,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
-import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.Vector;
@@ -228,7 +227,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
             System.out.println("........... operations NOT blocked. Going to take.......");
 
-            TupleMessage msg = new TupleMessage(template, Type.TAKE2);
+            TupleMessage msg = new TupleMessage(template, Type.TAKE);
             sendClientRequest(msg);
 
         } else {
@@ -241,10 +240,10 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
     }
 
-    public void receiveTakeDecisionResult(Tuple tupleToTake) {
+   /* public void receiveTakeDecisionResult(Tuple tupleToTake) {
         TupleMessage msg = new TupleMessage(tupleToTake, Type.TAKE);
         sendClientRequest(msg);
-    }
+    }*/
 
     public void isolate() {
         System.out.println("isolate recieved at Server");
@@ -482,14 +481,6 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                         logManager.writeLog(tupleMessage, StateManager.getInstance().getCurrentViewId());
                         break;
                     case TAKE:
-                        /*Tuple tuple = tupleManager.takeTuple(tupleMessage.getTuple());
-                        if (tuple != null) {
-                            sendResultsNotificationToClient(tuple, Type.TAKE);
-                        }
-                        System.out.println("Writing to the log");
-                        logManager.writeLog(tupleMessage, StateManager.getInstance().getCurrentViewId());*/
-                        break;
-                    case TAKE2:
                         tupleManager.addToTakeQueue(tupleMessage);
                         break;
 

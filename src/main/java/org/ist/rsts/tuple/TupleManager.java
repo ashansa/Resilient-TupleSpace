@@ -99,7 +99,7 @@ public class TupleManager {
             System.out.println(".........................");
             System.out.println(".........................");
             Tuple tupleTaken = takeTuple(tupleToTake);
-            logManager.writeLog(tupleTaken, Type.TAKE2.name(), StateManager.getInstance().getCurrentViewId());
+            logManager.writeLog(tupleTaken, Type.TAKE.name(), StateManager.getInstance().getCurrentViewId());
         }
         System.out.println("take operation processed........");
     }
@@ -180,8 +180,8 @@ public class TupleManager {
                     System.out.println("found a match for a pending take. Try take again....");
                     Tuple tupleTaken = takeTuple(pendingTakeRequests.get(i));
                     if (tupleTaken != null) {
-                        logManager.writeLog(tupleTaken, Type.TAKE2.name(), StateManager.getInstance().getCurrentViewId());
-                        server.sendResultsNotificationToClient(tupleTaken, Type.TAKE2);
+                        logManager.writeLog(tupleTaken, Type.TAKE.name(), StateManager.getInstance().getCurrentViewId());
+                        server.sendResultsNotificationToClient(tupleTaken, Type.TAKE);
                         pendingTakeRequests.remove(pendingTakeRequests.get(i));
                     }
                 }

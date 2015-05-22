@@ -10,13 +10,11 @@ import org.ist.rsts.tuple.Type;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Logger;
 
 /**
@@ -180,7 +178,7 @@ public class StateManager {
                 //update tuple space
                 if (Type.WRITE.name().equals(operation)) {
                     tupleManager.writeTuple(tuple);
-                } else if (Type.TAKE2.name().equals(operation)) {
+                } else if (Type.TAKE.name().equals(operation)) {
                     tupleManager.takeTuple(tuple);
                 }
 
