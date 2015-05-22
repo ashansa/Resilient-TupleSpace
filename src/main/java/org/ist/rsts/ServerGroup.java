@@ -327,10 +327,10 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            }
 
-            if(newViewId != 0)
-                StateManager.getInstance().setViewNumber(newViewId);
+                if(newViewId != 0)
+                    StateManager.getInstance().updateLastMajorityViewId(newViewId);
+            }
 
             System.out.println("@@@@@@@@@@@@@@@@@ now view Id : " + StateManager.getInstance().getCurrentViewId());
 
