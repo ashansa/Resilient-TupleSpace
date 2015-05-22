@@ -29,22 +29,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * This class defines a ClientOpenGroupTest This example shows how to use and
- * configure Appia with jGCS using an open group, where there is a group of
- * servers that accept Messages from external members. This is the (external)
- * client part.
- * <p/>
- * The example only shows how to configure and use, and it only sends dummy
- * messages. It does not intend to implement any algorithm.
- *
- * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
- * @version 1.0
- */
 public class Client extends Thread {
 
-    private int id = 0;
-    private int lastReceivedMessage = -1;
     private ServerGroup server;
     private Lock lock = new ReentrantLock();
     private Condition readBlock = lock.newCondition();
@@ -52,15 +38,6 @@ public class Client extends Thread {
 
     public Client(ServerGroup server) {
         this.server = server;
-    }
-
-    private void sendMessage(String value1, String value2, String value3, Type type) throws IOException {
-        /*Message msg = data.createMessage();
-        TupleMessage tupleMessage = new TupleMessage(id++, new Tuple(value1, value2, value3), type);
-        tupleMessage.marshal();
-        byte[] bytes = Constants.createMessageToSend(Constants.MessageType.TUPLE, tupleMessage.getByteArray());
-        msg.setPayload(bytes);
-        data.send(msg, rpcService, null, null);*/
     }
 
     public void sendWriteRequest(String value1, String value2, String value3) throws IOException {
@@ -72,46 +49,39 @@ public class Client extends Thread {
             lock.lock();
             Tuple result = server.read(new Tuple(value1, value2, value3));
             if(result == null) {
-                System.out.println("getMatchingTuples: waiting..........");
+                System.out.println("Read Request: waiting..........");
                 readBlock.await();
-                System.out.println("getMatchingTuples: wait finish.......");
+                System.out.println("Read Request: wait finish.......");
             } else {
                 String[] values = result.getValues();
-                System.out.println("result :" + values[0] + "," + values[1] + "," + values[2]);
+                System.out.println("================== RESULTS ====================");
+                System.out.println(values[0] + "," + values[1] + "," + values[2]);
+                System.out.println("===============================================");
             }
-
         } finally {
             lock.unlock();
         }
-
     }
 
     public void sendTakeRequest(String value1, String value2, String value3) throws IOException, InterruptedException {
         try{
-            System.out.println("Grabbing lock in take");
             lock.lock();
+            System.out.println("take request: wait.....");
             server.take(new Tuple(value1, value2, value3));
-            System.out.println("take : wait.....");
             takeBlock.await();
-            System.out.println("take : wait finish.......");
+            System.out.println("take request: wait finish.......");
         } finally {
             lock.unlock();
         }
-
     }
 
-
     public void receiveResults(Tuple result, Type type) {
-        System.out.println("result received");
-        for (String value : result.getValues()) {
-            System.out.println(value);
-        }
 
         if(Type.READ.equals(type)) {
             try{
                 lock.lock();
                 readBlock.signal();
-                System.out.println("getMatchingTuples signaled......");
+                System.out.println("read signaled......");
             } finally {
                 lock.unlock();
             }
@@ -126,6 +96,11 @@ public class Client extends Thread {
             }
 
         }
+
+        System.out.println("================== RECEIVED RESULTS ====================");
+        String[] values = result.getValues();
+        System.out.println(values[0] + "," + values[1] + "," + values[2]);
+        System.out.println("========================================================");
     }
 
     private void isolateNode() {
@@ -138,12 +113,11 @@ public class Client extends Thread {
 
     public void run() {
 
-        System.out.println("> \n");
         String line = null;
-
-        System.out.println("eg: write:1,2,3");
-        System.out.println("    getMatchingTuples:*,2,3");
-        System.out.println("    take:*,2,3");
+        System.out.println("\n \n \n ################### starting RSTS Client ###########################");
+        System.out.println("eg: write:a,b,c");
+        System.out.println("    read:a,*,*");
+        System.out.println("    take:a,*,*");
         System.out.println("To isolate (or recover) node - type isolate (recover)");
 
         while (true) {

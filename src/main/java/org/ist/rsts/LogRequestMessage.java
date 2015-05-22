@@ -40,7 +40,4 @@ public class LogRequestMessage extends ProtocolMessage implements Serializable {
         return sender;
     }
 
-    public void setViewId(int viewId) {
-        this.viewId = viewId;
-    }
 }

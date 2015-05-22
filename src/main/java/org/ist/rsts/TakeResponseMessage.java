@@ -9,9 +9,6 @@ import java.io.Serializable;
 import java.util.UUID;
 import java.util.Vector;
 
-/**
- * Created by ashansa on 5/21/15.
- */
 public class TakeResponseMessage  extends ProtocolMessage implements Serializable {
 
     Vector<Tuple> matchingTuples;

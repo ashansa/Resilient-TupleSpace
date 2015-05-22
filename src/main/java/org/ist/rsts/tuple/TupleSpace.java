@@ -3,9 +3,6 @@ package org.ist.rsts.tuple;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * Created by ashansa on 4/15/15.
- */
 public class TupleSpace {
 
     CopyOnWriteArrayList<Tuple> tuples = new CopyOnWriteArrayList<Tuple>();
@@ -43,7 +40,6 @@ public class TupleSpace {
         tuples.remove(tuple);
     }
 
-    //TODO temp method......
     public int tupleSize() {
         return tuples.size();
     }
