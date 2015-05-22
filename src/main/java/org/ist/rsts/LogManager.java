@@ -5,26 +5,23 @@ import org.ist.rsts.tuple.TupleMessage;
 import org.ist.rsts.tuple.Type;
 
 import java.io.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class LogManager {
 
     private final static Logger logger = Logger.getLogger(LogManager.class.getName());
-    private static String logDirPath;
+    String logDirPath;
     int corePoolSize = 5;
-    int maxPoolSize = 10;
+    int maxPoolSize = 20;
     long keepAliveTime = 5;
-    static String logId;
+    String logId;
 
     BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+
     ThreadPoolExecutor executor = new ThreadPoolExecutor(corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.MINUTES, queue);
-
-
     public LogManager(String logId) {
         this.logId = logId;
         this.logDirPath = "log" + File.separator + logId;
@@ -41,7 +38,7 @@ public class LogManager {
     }
 
     public void writeLog(TupleMessage tupleMessage, int viewId) {
-        executor.execute(new LogWriteTask(viewId, logId, tupleMessage, logDirPath));
+        executorService.execute(new LogWriteTask(viewId, logId, tupleMessage, logDirPath));
     }
 
     public void writeLog(Tuple tuple, String operation, int viewId) {
@@ -68,7 +65,7 @@ public class LogManager {
             this.tuple = msg.getTuple();
             this.operationType = msg.getType();
             this.viewId = viewId;
-            this.logId = logId;
+            //this.logId = logId;
         }
 
         public LogWriteTask(int viewId, String logId, Tuple tuple, Type type, String logDirPath) {
@@ -76,7 +73,7 @@ public class LogManager {
             this.tuple = tuple;
             this.operationType = type;
             this.viewId = viewId;
-            this.logId = logId;
+           // this.logId = logId;
         }
 
         @Override
@@ -84,7 +81,7 @@ public class LogManager {
 
             //Log format log-<serverid>-<viewid> eg: log-2-10
             logFile = new File(logDirPath.concat(File.separator).
-                    concat("log-").concat(logId).concat("-").concat(String.valueOf(viewId)));
+                    concat("log").concat("-").concat(String.valueOf(viewId)));
             try {
                 if (!logFile.exists()) {
                     logFile.createNewFile();
@@ -118,7 +115,7 @@ public class LogManager {
         }
     }
 
-    public static String getLogForView(int viewId) throws IOException {
+    public String getLogForView(int viewId) throws IOException {
 
         String log = "";
         File logForView = new File(logDirPath.concat(File.separator).concat("log-").concat(logId).concat("-").
