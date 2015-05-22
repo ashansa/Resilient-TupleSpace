@@ -215,6 +215,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
             System.out.println("........... operations NOT blocked. Going to take.......");
 
+            while(tupleManager.getMatchingTuples(template).size() == 0) {}
+            System.out.println("sending take req >>>>>>>>>>>>>>>>>>>> ");
             TupleMessage msg = new TupleMessage(template, Type.TAKE);
             sendClientRequest(msg);
 
