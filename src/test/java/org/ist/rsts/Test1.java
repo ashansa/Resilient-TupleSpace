@@ -21,12 +21,12 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class Test {
+public class Test1 {
 
     long takeTestTime;
     long writeTestTime;
 
-    int noOfNodes = 4;
+    int noOfNodes = 10;
     ArrayList<ServerGroup> servers = new ArrayList<ServerGroup>();
     private long readTestTime;
 
