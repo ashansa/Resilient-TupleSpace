@@ -103,11 +103,11 @@ public class Client extends Thread {
         System.out.println("========================================================");
     }
 
-    private void isolateNode() {
+    public void isolateNode() {
         server.isolate();
     }
 
-    private void recoverNode() {
+    public void recoverNode() {
         server.recover();
     }
 

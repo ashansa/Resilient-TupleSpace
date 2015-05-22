@@ -106,7 +106,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             Thread.sleep(Integer.MAX_VALUE);
         } catch (Exception e) {
             //log here
-            e.printStackTrace();
+            System.out.println("I am leaving the group");
+            //e.printStackTrace();
         }
     }
 
