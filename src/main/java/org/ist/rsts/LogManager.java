@@ -51,6 +51,13 @@ public class LogManager {
         executor.execute(new LogWriteTask(viewId, logId, tuple, type, logDirPath));
     }
 
+    public void clearLogFile(int lastPresentViewId) {
+        File logFile = new File(logDirPath.concat(File.separator).concat("log").concat("-").
+                concat(String.valueOf(lastPresentViewId)));
+        if(logFile.exists())
+            logFile.delete();
+    }
+
 
     private class LogWriteTask implements Runnable {
         private int viewId;

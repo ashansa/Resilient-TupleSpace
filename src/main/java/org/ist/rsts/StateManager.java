@@ -152,6 +152,9 @@ public class StateManager {
         if(myLastViewLog != null) {
             //undo operations that he has done in his last view
             //TODO: do this....
+            undoOperation(myLastViewLog);
+            logManager.clearLogFile(lastPresentViewId);
+            Thread.sleep(5000);
         }
 
         //apply operations taken received
@@ -185,6 +188,27 @@ public class StateManager {
                 //write to log
                 logManager.writeLog(tuple, operation, viewId);
 
+            }
+        }
+    }
+
+    private void undoOperation(String logString) {
+        System.out.println("&&&&&&&&&&&&&&&&&&&&&  undo last view operations &&&&&&&&&&&&&&&&&&&&& ");
+        String[] logLines = logString.split("\n");
+        for (String log : logLines) {
+            //write:a,b,c
+            if(log.isEmpty()){
+                continue;
+            }
+            String operation = log.split(":")[0];
+            String[] values = log.split(":")[1].split(",");
+            Tuple tuple = new Tuple(values[0], values[1], values[2]);
+
+            //update tuple space
+            if (Type.WRITE.name().equals(operation)) {
+                tupleManager.takeTuple(tuple);
+            } else if (Type.TAKE.name().equals(operation)) {
+                tupleManager.writeTuple(tuple);
             }
         }
     }
