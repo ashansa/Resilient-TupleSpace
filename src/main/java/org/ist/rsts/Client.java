@@ -90,7 +90,7 @@ public class Client extends Thread {
         try{
             System.out.println("Grabbing lock in take");
             lock.lock();
-            server.take2(new Tuple(value1, value2, value3));
+            server.take(new Tuple(value1, value2, value3));
             System.out.println("take : wait.....");
             takeBlock.await();
             System.out.println("take : wait finish.......");

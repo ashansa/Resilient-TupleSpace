@@ -221,8 +221,7 @@ public class TupleManager {
                     Vector<Tuple> matchingTuples = getMatchingTuples(takeMsg.getTuple());
                     server.bcastMatchingTuplesForTake(matchingTuples, uuidOfTake);
                     while (!isResponsesComplete(uuidOfTake)) {
-                        //do not
-                        Thread.sleep(2000);
+                        //do noting
                     }
                     //System.out.println("%%%%%%%%%%%% all responses received %%%%%%%%");
                     Vector<TakeResponseMessage> responses = takeResponses.get(uuidOfTake);

@@ -155,13 +155,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 System.out.println("........... operations are blocked. Waiting until unblocked to write.......");
 
             //Avoid sending messages after Block OK is issued
-            while (isBlocked) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
+            while (isBlocked) {}
             System.out.println("........... operations NOT blocked. Going to write.......");
 
             TupleMessage msg = new TupleMessage(tuple, Type.WRITE);
@@ -182,7 +176,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
     }
 
-    public void take(Tuple template) {
+    public void take_bk(Tuple template) {
        /* System.out.println("all and current : " + allNodes + " , " + membersInGroup);
         if (membersInGroup > Math.ceil(allNodes / 2)) {
 
@@ -209,7 +203,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         }*/
     }
 
-    public void take2(Tuple template) {
+    public void take(Tuple template) {
         System.out.println("all and current : " + allNodes + " , " + membersInGroup);
         if (membersInGroup > Math.ceil(allNodes / 2)) {
 
@@ -217,13 +211,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 System.out.println("........... operations are blocked. Waiting until unblocked to take.......");
 
             //Avoid sending messages after Block OK is issued
-            while (isBlocked) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
+            while (isBlocked) {}
 
             System.out.println("........... operations NOT blocked. Going to take.......");
 

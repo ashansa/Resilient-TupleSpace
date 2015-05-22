@@ -154,7 +154,6 @@ public class StateManager {
             //TODO: do this....
             undoOperation(myLastViewLog);
             logManager.clearLogFile(lastPresentViewId);
-            Thread.sleep(5000);
         }
 
         //apply operations taken received
