@@ -40,6 +40,12 @@
         <session name="loopback" sharing="private">
             <protocol>net.sf.appia.protocols.loopBack.LoopBackLayer</protocol>
         </session>
+        <session name="causal" sharing="global">
+            <protocol>net.sf.appia.protocols.causalWaiting.CausalWaitingLayer</protocol>
+        </session>
+        <session name="multiplexer" sharing="global">
+            <protocol>net.sf.appia.protocols.group.vsyncmultiplexer.VSyncMultiplexerLayer</protocol>
+        </session>
         <!--<session name="total" sharing="private">
             <protocol>net.sf.appia.protocols.total.sequencer.TotalSequencerLayer</protocol>
         </session>-->
