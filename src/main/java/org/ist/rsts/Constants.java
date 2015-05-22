@@ -35,6 +35,8 @@ public abstract class Constants {
                     return new TupleMessage(buffer);
                 case LOG_REQUEST:
                     return new LogRequestMessage(buffer);
+                case LOG_RESPONSE:
+                    return new LogResponseMessage(buffer);
                 case TAKE_RESPONSE:
                     return new TakeResponseMessage(buffer);
                 default:

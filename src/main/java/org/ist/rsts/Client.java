@@ -147,7 +147,6 @@ public class Client extends Thread {
         System.out.println("To isolate (or recover) node - type isolate (recover)");
 
         while (true) {
-            System.out.println("Operations: write,read,take");
             try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(
                         System.in));

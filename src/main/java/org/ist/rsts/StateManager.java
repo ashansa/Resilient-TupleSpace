@@ -8,11 +8,15 @@ import org.ist.rsts.tuple.Tuple;
 import org.ist.rsts.tuple.TupleManager;
 import org.ist.rsts.tuple.Type;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Logger;
 
 /**
@@ -28,17 +32,20 @@ public class StateManager {
     private ArrayBlockingQueue<LogResponseMessage> blockingQueue;
     private TupleManager tupleManager;
     private final static Logger logger = Logger.getLogger(StateManager.class.getName());
+    private ExecutorService singleExecutor = Executors.newSingleThreadExecutor();
     private LogManager logManager;
+    private ServerGroup server;
 
     protected StateManager() {
     }
 
-    public void init(DataSession groupSession, Service group, TupleManager tupleManager, LogManager logManager) {
+    public void init(DataSession groupSession, Service group, TupleManager tupleManager, LogManager logManager, ServerGroup server) {
         this.groupSession = groupSession;
         this.group = group;
         blockingQueue = new ArrayBlockingQueue(1, true);
         this.tupleManager = tupleManager;
         this.logManager = logManager;
+        this.server = server;
     }
 
     /**
@@ -61,13 +68,30 @@ public class StateManager {
         return viewId;
     }
 
+    public void sync(List<SocketAddress> memberList, int newId){
+        System.out.println("OLD...., NEW... : " + viewId + "," + newId);
+        if (viewId != newId - 1 && memberList.size()>1) { //I have not been in the last view. Need to transfer state
+
+            singleExecutor.execute(new SyncTask(memberList,newId));
+
+        } else {
+            System.out.println("........... NO STATE TRANSFER needed......");
+        }
+
+    }
+
     public void syncStates(List<SocketAddress> memberList, int newId) throws IOException, InterruptedException {
-        System.out.println("OLD...., NEW... : " + newId + "," + newId);
-        if (viewId != newId - 1) { //I have not been in the last view. Need to transfer state
+
+        //removing my id from list
+//        if(memberList.contains(server.getLocalAddress())) {
+//            memberList.remove(server.getLocalAddress());
+//        }
+        System.out.println("OLD...., NEW... : " + viewId + "," + newId);
+        if (viewId != newId - 1 && memberList.size()>1) { //I have not been in the last view. Need to transfer state
             SocketAddress receiver = memberList.get(new Random().nextInt(memberList.size()));
             System.out.println("TODO.............. STATE TRANSFER....." + receiver.toString());
-
             requestLogs(receiver);
+            System.out.println("Logs are requested");
             mergeLogs();
         } else {
             System.out.println("........... NO STATE TRANSFER needed......");
@@ -75,7 +99,13 @@ public class StateManager {
     }
 
     public void sendLogsToMerge(LogRequestMessage logRequestMessage) throws IOException {
+        try {
+            logRequestMessage.unmarshal();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         int requesterViewId = logRequestMessage.getViewId();
+        String sender =  logRequestMessage.getSenderAddressString().toString();
         // Need to send correct log messages.
 
         LogResponseMessage logRequestMsg = new LogResponseMessage(getLogs(requesterViewId));
@@ -83,23 +113,29 @@ public class StateManager {
         logRequestMsg.marshal();
         byte[] bytes = Constants.createMessageToSend(Constants.MessageType.LOG_RESPONSE, logRequestMsg.getByteArray());
         msg.setPayload(bytes);
-
-        System.out.println("....... going to send log response to :" + logRequestMessage.getSenderAddress());
-        groupSession.send(msg, group, logRequestMessage.getSenderAddress(), null, null);
+        System.out.println("vieeew "+requesterViewId);
+        System.out.println("....... going to send log response to :" + sender);
+        SocketAddress dest = new InetSocketAddress(sender.split(":")[0],Integer.valueOf(sender.split(":")[1]));
+        System.out.println(dest);
+        groupSession.send(msg, group, null, dest, null);
     }
 
     private void requestLogs(SocketAddress destination) throws IOException {
-        System.out.println("view id ======" + viewId);
-        LogRequestMessage logRequestMsg = new LogRequestMessage(viewId);
+        SocketAddress mySocketAddress = server.getLocalAddress();
+        System.out.println("@@@@@@@@@ view id, local address ======" + viewId+","+mySocketAddress);
+        System.out.println(mySocketAddress.toString().replace("/", ""));
+        LogRequestMessage logRequestMsg = new LogRequestMessage(viewId, new StringBuffer(mySocketAddress.toString().replace("/", "")));
+        logRequestMsg.setSenderAddress(mySocketAddress);
         Message msg = groupSession.createMessage();
         logRequestMsg.marshal();
         byte[] bytes = Constants.createMessageToSend(Constants.MessageType.LOG_REQUEST, logRequestMsg.getByteArray());
         msg.setPayload(bytes);
-
-        groupSession.send(msg, group, destination, null, null);
+        System.out.println("Sending to====> "+destination);
+        groupSession.send(msg, group, null,destination, null);
     }
 
     private void mergeLogs() throws InterruptedException {
+        System.out.println("Staring log merging and waiting on take");
         LogResponseMessage responseMessage = blockingQueue.take();
        /* String log = responseMessage.getLog();
         String[] logs = log.split("\n");
@@ -134,6 +170,9 @@ public class StateManager {
             String[] logLines = logString.split("\n");
             for (String log : logLines) {
                 //write:a,b,c
+                if(log.isEmpty()){
+                    continue;
+                }
                 String operation = log.split(":")[0];
                 String[] values = log.split(":")[1].split(",");
                 Tuple tuple = new Tuple(values[0], values[1], values[2]);
@@ -159,13 +198,44 @@ public class StateManager {
         System.out.println("....... current View ID ..... " + getCurrentViewId());
         // travesing from previous view to current view.
         for (int i = requesterViewId; i < getCurrentViewId() + 1; i++) {
-            logs.put(i, LogManager.getLogForView(i));
+            logs.put(i, logManager.getLogForView(i));
         }
         return logs;
     }
 
     public void addToBlockingQueue(LogResponseMessage response) {
-        blockingQueue.add(response);
+        try {
+            blockingQueue.put(response);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private class SyncTask implements Runnable{
+        List<SocketAddress> memberList;
+        int newId;
+       public SyncTask(List<SocketAddress> memberList, int newId){
+           this.memberList = memberList;
+           this.newId = newId;
+       }
+
+        @Override
+        public void run() {
+            try {
+                if(memberList.contains(server.getLocalAddress())) {
+                    memberList.remove(server.getLocalAddress());
+                }
+                SocketAddress receiver = memberList.get(new Random().nextInt(memberList.size()));
+                System.out.println("TODO.............. STATE TRANSFER....." + receiver.toString());
+                requestLogs(receiver);
+                System.out.println("Logs are requested");
+                mergeLogs();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 }

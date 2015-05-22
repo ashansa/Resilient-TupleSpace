@@ -23,10 +23,7 @@ import net.sf.appia.jgcs.AppiaGroup;
 import net.sf.appia.jgcs.AppiaProtocolFactory;
 import net.sf.appia.jgcs.AppiaService;
 import net.sf.jgcs.*;
-import net.sf.jgcs.membership.BlockListener;
-import net.sf.jgcs.membership.BlockSession;
-import net.sf.jgcs.membership.MembershipListener;
-import net.sf.jgcs.membership.MembershipSession;
+import net.sf.jgcs.membership.*;
 import org.ist.rsts.tuple.Tuple;
 import org.ist.rsts.tuple.TupleManager;
 import org.ist.rsts.tuple.TupleMessage;
@@ -70,7 +67,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     int allNodes = -1;
     boolean isBlocked = false;
     static int writeTakeSeqNo = 0;
-    SocketAddress localAddress;
+
+    private SocketAddress localAddress;
     public static boolean isIsolated = false;
 
     private void init(ControlSession control, DataSession grSession, Service gr, String logId) throws IOException {
@@ -80,7 +78,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         this.tupleManager = new TupleManager(this);
         this.logManager = new LogManager(logId);
 
-        StateManager.getInstance().init(grSession, gr, tupleManager, logManager);
+        StateManager.getInstance().init(grSession, gr, tupleManager, logManager, this);
 
         InputStream input = new FileInputStream("./src/main/java/services.properties");
         properties.load(input);
@@ -99,6 +97,10 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             ((MembershipSession) control).setMembershipListener(this);
         if (control instanceof BlockSession)
             ((BlockSession) control).setBlockListener(this);
+    }
+
+    public SocketAddress getLocalAddress() {
+        return localAddress;
     }
 
     public static void main(String[] args) {
@@ -321,20 +323,21 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                     "\tSize: " + ((MembershipSession) control).getMembership().getMembershipList().size());
 
             int noOfMembers = ((MembershipSession) control).getMembership().getMembershipList().size();
-            String view = ((MembershipSession) control).getMembership().getMembershipID().toString();
-            String viewIdString = view.split(";")[0].split(":")[1];
+            Membership membership = ((MembershipSession) control).getMembership();
+            String viewIdString = membership.getMembershipID().toString().split(";")[0].split(":")[1];
             int localId = ((MembershipSession) control).getMembership().getLocalRank();
             localAddress = ((MembershipSession) control).getMembership().getMemberAddress(localId);
             System.out.println("My local Adress is ==========>>>>>>>" + localAddress);
             int newViewId = 0;
-            if (noOfMembers > 1 && viewIdString != null) { //membership > 1 to avoid the initial view which includes only that node
+
+            if (noOfMembers > Math.ceil(allNodes / 2) && viewIdString != null) { // sync view only if you are in the majority view
                 System.out.println("new view id string : " + viewIdString);
                 newViewId = Integer.valueOf(viewIdString);
                 System.out.println("View ID: " + newViewId);
                 try {
                     System.out.println("current view Id : " + StateManager.getInstance().getCurrentViewId());
                     System.out.println("new view Id : " + newViewId);
-                   // StateManager.getInstance().syncStates(((MembershipSession) control).getMembership().getMembershipList(), newViewId);
+                    StateManager.getInstance().sync(((MembershipSession) control).getMembership().getMembershipList(), newViewId);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -347,7 +350,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             isBlocked = false;
         } catch (NotJoinedException e) {
             e.printStackTrace();
-            groupSession.close();
+           // groupSession.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
