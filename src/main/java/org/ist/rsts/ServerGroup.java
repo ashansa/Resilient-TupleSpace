@@ -21,6 +21,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     private ControlSession control;
     private DataSession groupSession;
     private Service group;
+    private Service totalGroup;
     private TupleManager tupleManager;
     private LogManager logManager;
     private Client client;
@@ -33,10 +34,11 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     private SocketAddress localAddress;
     public static boolean isIsolated = false;
 
-    private void init(ControlSession control, DataSession grSession, Service gr, String logId) throws IOException {
+    private void init(ControlSession control, DataSession grSession, Service gr, Service total, String logId) throws IOException {
         this.control = control;
         this.groupSession = grSession;
         this.group = gr;
+        this.totalGroup = total;
         this.logManager = new LogManager(logId);
         this.tupleManager = new TupleManager(this, logManager);
 
@@ -85,8 +87,9 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         Protocol protocol = protocolFactory.createProtocol();
         DataSession session = protocol.openDataSession(appiaGroup);
         ControlSession control = protocol.openControlSession(appiaGroup);
-        Service sg = new AppiaService("rrpc_group");
-        this.init(control, session, sg, logId);
+        Service rrpcTotal = new AppiaService("rrpc_total");
+        Service rrpc = new AppiaService("rrpc");
+        this.init(control, session, rrpc, rrpcTotal, logId);
     }
 
     public void run() {
@@ -175,7 +178,11 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             byte[] bytes = Constants.createMessageToSend(Constants.MessageType.TUPLE, tupleMsg.getByteArray());
             msg.setPayload(bytes);
             System.out.println("====== sending client request : BCAST......" + ((MembershipSession) control).getMembership().getMembershipList().size());
-            groupSession.send(msg, group, null, null);
+            if(Type.TAKE.equals(tupleMsg.getType().name()))
+                groupSession.send(msg, totalGroup, null, null);
+            else
+                groupSession.send(msg, group, null, null);
+
         } catch (IOException e) {
             e.printStackTrace();
         }

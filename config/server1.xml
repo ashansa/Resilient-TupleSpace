@@ -1,43 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE appia PUBLIC "-//DTDName//DTD//EN"
-"http://appia.di.fc.ul.pt/xml/3.2/appiaxml.dtd">
+        "http://appia.di.fc.ul.pt/xml/3.2/appiaxml.dtd">
 
 <appia>
     <template name="tcp_total">
-        <session name="TCPSession" sharing="private">
+        <session name="TCPSession" sharing="global">
             <protocol>net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
         </session>
-        <session name="crashRecover" sharing="private">
+        <session name="crashRecover" sharing="global">
             <protocol>org.ist.rsts.minorityview.CrashRecoverLayer</protocol>
         </session>
-        <session name="gbl" sharing="private">
+        <session name="gbl" sharing="global">
             <protocol>net.sf.appia.protocols.group.bottom.GroupBottomLayer</protocol>
         </session>
-        <session name="gol" sharing="private">
+        <session name="gol" sharing="global">
             <protocol>net.sf.appia.protocols.group.remote.RemoteGossipOutLayer</protocol>
         </session>
-        <session name="suspectl" sharing="private">
+        <session name="suspectl" sharing="global">
             <protocol>net.sf.appia.protocols.group.suspect.SuspectLayer</protocol>
         </session>
-        <session name="intral" sharing="private">
+        <session name="intral" sharing="global">
             <protocol>net.sf.appia.protocols.group.intra.IntraLayer</protocol>
         </session>
-        <session name="interl" sharing="private">
+        <session name="interl" sharing="global">
             <protocol>net.sf.appia.protocols.group.inter.InterLayer</protocol>
         </session>
-        <session name="hl" sharing="private">
+        <session name="hl" sharing="global">
             <protocol>net.sf.appia.protocols.group.heal.HealLayer</protocol>
         </session>
-        <session name="stablel" sharing="private">
+        <session name="stablel" sharing="global">
             <protocol>net.sf.appia.protocols.group.stable.StableLayer</protocol>
         </session>
-        <session name="ll" sharing="private">
+        <session name="ll" sharing="global">
             <protocol>net.sf.appia.protocols.group.leave.LeaveLayer</protocol>
         </session>
-        <session name="vsl" sharing="private">
+        <session name="vsl" sharing="global">
             <protocol>net.sf.appia.protocols.group.sync.VSyncLayer</protocol>
         </session>
-        <session name="loopback" sharing="private">
+        <session name="loopback" sharing="global">
             <protocol>net.sf.appia.protocols.loopBack.LoopBackLayer</protocol>
         </session>
         <session name="causal" sharing="global">
@@ -49,12 +49,76 @@
         <!--<session name="total" sharing="private">
             <protocol>net.sf.appia.protocols.total.sequencer.TotalSequencerLayer</protocol>
         </session>-->
-        <session name="atsl" sharing="private">
+        <session name="total" sharing="private">
+            <protocol>net.sf.appia.protocols.total.seto.SETOLayer</protocol>
+        </session>
+        <session name="atsl" sharing="global">
             <protocol>net.sf.appia.jgcs.protocols.top.TOPLayer</protocol>
         </session>
     </template>
 
-    <channel name="rrpc_group" template="tcp_total" initialized="no">
+    <template name="tcp">
+        <session name="TCPSession" sharing="global">
+            <protocol>net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
+        </session>
+        <session name="crashRecover" sharing="global">
+            <protocol>org.ist.rsts.minorityview.CrashRecoverLayer</protocol>
+        </session>
+        <session name="gbl" sharing="global">
+            <protocol>net.sf.appia.protocols.group.bottom.GroupBottomLayer</protocol>
+        </session>
+        <session name="gol" sharing="global">
+            <protocol>net.sf.appia.protocols.group.remote.RemoteGossipOutLayer</protocol>
+        </session>
+        <session name="suspectl" sharing="global">
+            <protocol>net.sf.appia.protocols.group.suspect.SuspectLayer</protocol>
+        </session>
+        <session name="intral" sharing="global">
+            <protocol>net.sf.appia.protocols.group.intra.IntraLayer</protocol>
+        </session>
+        <session name="interl" sharing="global">
+            <protocol>net.sf.appia.protocols.group.inter.InterLayer</protocol>
+        </session>
+        <session name="hl" sharing="global">
+            <protocol>net.sf.appia.protocols.group.heal.HealLayer</protocol>
+        </session>
+        <session name="stablel" sharing="global">
+            <protocol>net.sf.appia.protocols.group.stable.StableLayer</protocol>
+        </session>
+        <session name="ll" sharing="global">
+            <protocol>net.sf.appia.protocols.group.leave.LeaveLayer</protocol>
+        </session>
+        <session name="vsl" sharing="global">
+            <protocol>net.sf.appia.protocols.group.sync.VSyncLayer</protocol>
+        </session>
+        <session name="loopback" sharing="global">
+            <protocol>net.sf.appia.protocols.loopBack.LoopBackLayer</protocol>
+        </session>
+        <session name="causal" sharing="global">
+            <protocol>net.sf.appia.protocols.causalWaiting.CausalWaitingLayer</protocol>
+        </session>
+        <session name="multiplexer" sharing="global">
+            <protocol>net.sf.appia.protocols.group.vsyncmultiplexer.VSyncMultiplexerLayer</protocol>
+        </session>
+        <!--<session name="total" sharing="private">
+            <protocol>net.sf.appia.protocols.total.sequencer.TotalSequencerLayer</protocol>
+        </session>-->
+        <session name="uniform" sharing="private">
+            <protocol>net.sf.appia.protocols.uniform.UniformLayer</protocol>
+        </session>
+        <session name="atsl" sharing="global">
+            <protocol>net.sf.appia.jgcs.protocols.top.TOPLayer</protocol>
+        </session>
+    </template>
+
+    <channel name="rrpc_total" template="tcp_total" initialized="no">
+        <memorymanagement size="40000000" up_threshold="15000000" down_threshold="7000000" />
+        <chsession name="atsl">
+            <parameter name="gossip_address">192.168.1.186:10000</parameter>
+        </chsession>
+    </channel>
+
+    <channel name="rrpc" template="tcp" initialized="no">
         <memorymanagement size="40000000" up_threshold="15000000" down_threshold="7000000" />
         <chsession name="atsl">
             <parameter name="gossip_address">192.168.1.186:10000</parameter>
