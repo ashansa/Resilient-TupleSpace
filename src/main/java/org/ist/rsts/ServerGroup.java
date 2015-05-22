@@ -75,8 +75,8 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
         this.control = control;
         this.groupSession = grSession;
         this.group = gr;
-        this.tupleManager = new TupleManager(this);
         this.logManager = new LogManager(logId);
+        this.tupleManager = new TupleManager(this, logManager);
 
         StateManager.getInstance().init(grSession, gr, tupleManager, logManager, this);
 
@@ -344,9 +344,10 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             }
 
             StateManager.getInstance().setViewNumber(newViewId);
-            System.out.println("now view Id : " + StateManager.getInstance().getCurrentViewId());
+            System.out.println("@@@@@@@@@@@@@@@@@ now view Id : " + StateManager.getInstance().getCurrentViewId());
 
             membersInGroup = ((MembershipSession) control).getMembership().getMembershipList().size();
+            System.out.println("@@@@@@@@@@@@@@@@@@@@ membership changed @@@@@@@@@@@@@@@@@@@@");
             isBlocked = false;
         } catch (NotJoinedException e) {
             e.printStackTrace();

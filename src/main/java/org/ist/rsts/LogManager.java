@@ -45,8 +45,8 @@ public class LogManager {
         Type type = null;
         if (Type.WRITE.name().equals(operation))
             type = Type.WRITE;
-        else if (Type.TAKE.name().equals(operation))
-            type = Type.TAKE;
+        else if (Type.TAKE2.name().equals(operation))
+            type = Type.TAKE2;
 
         executor.execute(new LogWriteTask(viewId, logId, tuple, type, logDirPath));
     }
@@ -118,8 +118,7 @@ public class LogManager {
     public String getLogForView(int viewId) throws IOException {
 
         String log = "";
-        File logForView = new File(logDirPath.concat(File.separator).concat("log-").concat(logId).concat("-").
-                concat(String.valueOf(viewId)));
+        File logForView = new File(logDirPath.concat(File.separator).concat("log-").concat(String.valueOf(viewId)));
         if(logForView.exists()) {
             FileReader reader = new FileReader(logForView);
 

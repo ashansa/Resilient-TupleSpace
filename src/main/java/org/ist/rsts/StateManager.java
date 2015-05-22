@@ -72,7 +72,7 @@ public class StateManager {
         System.out.println("OLD...., NEW... : " + viewId + "," + newId);
         if (viewId != newId - 1 && memberList.size()>1) { //I have not been in the last view. Need to transfer state
 
-            singleExecutor.execute(new SyncTask(memberList,newId));
+            singleExecutor.execute(new SyncTask(memberList,viewId, newId));
 
         } else {
             System.out.println("........... NO STATE TRANSFER needed......");
@@ -80,7 +80,7 @@ public class StateManager {
 
     }
 
-    public void syncStates(List<SocketAddress> memberList, int newId) throws IOException, InterruptedException {
+    /*public void syncStates(List<SocketAddress> memberList, int newId) throws IOException, InterruptedException {
 
         //removing my id from list
 //        if(memberList.contains(server.getLocalAddress())) {
@@ -96,7 +96,7 @@ public class StateManager {
         } else {
             System.out.println("........... NO STATE TRANSFER needed......");
         }
-    }
+    }*/
 
     public void sendLogsToMerge(LogRequestMessage logRequestMessage) throws IOException {
         try {
@@ -120,11 +120,11 @@ public class StateManager {
         groupSession.send(msg, group, null, dest, null);
     }
 
-    private void requestLogs(SocketAddress destination) throws IOException {
+    private void requestLogs(SocketAddress destination, int lastPresentViewId) throws IOException {
         SocketAddress mySocketAddress = server.getLocalAddress();
-        System.out.println("@@@@@@@@@ view id, local address ======" + viewId+","+mySocketAddress);
+        System.out.println("@@@@@@@@@ last present view id, local address ======" + lastPresentViewId+","+mySocketAddress);
         System.out.println(mySocketAddress.toString().replace("/", ""));
-        LogRequestMessage logRequestMsg = new LogRequestMessage(viewId, new StringBuffer(mySocketAddress.toString().replace("/", "")));
+        LogRequestMessage logRequestMsg = new LogRequestMessage(lastPresentViewId, new StringBuffer(mySocketAddress.toString().replace("/", "")));
         logRequestMsg.setSenderAddress(mySocketAddress);
         Message msg = groupSession.createMessage();
         logRequestMsg.marshal();
@@ -134,7 +134,7 @@ public class StateManager {
         groupSession.send(msg, group, null,destination, null);
     }
 
-    private void mergeLogs() throws InterruptedException {
+    private void mergeLogs(int lastPresentViewId) throws InterruptedException {
         System.out.println("Staring log merging and waiting on take");
         LogResponseMessage responseMessage = blockingQueue.take();
        /* String log = responseMessage.getLog();
@@ -146,7 +146,7 @@ public class StateManager {
 
         String myLastViewLog = null;
         try {
-            myLastViewLog = logManager.getLogForView(viewId);
+            myLastViewLog = logManager.getLogForView(lastPresentViewId);
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("========== UNDO MY LAST LOG FAILED. Couldn't get last log ======");
@@ -180,7 +180,7 @@ public class StateManager {
                 //update tuple space
                 if (Type.WRITE.name().equals(operation)) {
                     tupleManager.writeTuple(tuple);
-                } else if (Type.TAKE.name().equals(operation)) {
+                } else if (Type.TAKE2.name().equals(operation)) {
                     tupleManager.takeTuple(tuple);
                 }
 
@@ -213,9 +213,11 @@ public class StateManager {
 
     private class SyncTask implements Runnable{
         List<SocketAddress> memberList;
+        int lastPresentViewId;
         int newId;
-       public SyncTask(List<SocketAddress> memberList, int newId){
+       public SyncTask(List<SocketAddress> memberList, int lastPresentViewId, int newId){
            this.memberList = memberList;
+           this.lastPresentViewId = lastPresentViewId;
            this.newId = newId;
        }
 
@@ -227,9 +229,9 @@ public class StateManager {
                 }
                 SocketAddress receiver = memberList.get(new Random().nextInt(memberList.size()));
                 System.out.println("TODO.............. STATE TRANSFER....." + receiver.toString());
-                requestLogs(receiver);
+                requestLogs(receiver, lastPresentViewId);
                 System.out.println("Logs are requested");
-                mergeLogs();
+                mergeLogs(lastPresentViewId);
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {

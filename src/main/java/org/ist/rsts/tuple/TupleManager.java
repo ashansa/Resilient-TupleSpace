@@ -1,6 +1,8 @@
 package org.ist.rsts.tuple;
 
+import org.ist.rsts.LogManager;
 import org.ist.rsts.ServerGroup;
+import org.ist.rsts.StateManager;
 import org.ist.rsts.TakeResponseMessage;
 
 import java.io.IOException;
@@ -16,13 +18,15 @@ public class TupleManager {
     //TODO: can we have > 1 pending req? since we block when there is a pending req
     Vector<Tuple> pendingReadRequests = new Vector<Tuple>();
     Vector<Tuple> pendingTakeRequests = new Vector<Tuple>();
-   // Vector<Tuple> pendingTakeDecisions = new Vector<Tuple>();
-    ServerGroup server;
     public HashMap<UUID, Vector<TakeResponseMessage>> takeResponses = new HashMap<UUID, Vector<TakeResponseMessage>>();
     private ArrayBlockingQueue<TupleMessage> takeTemplatesQueue = new ArrayBlockingQueue<TupleMessage>(1000);
 
-    public TupleManager(ServerGroup server) {
+    ServerGroup server;
+    LogManager logManager;
+
+    public TupleManager(ServerGroup server, LogManager logManager) {
         this.server = server;
+        this.logManager = logManager;
         new Thread(new TakeConsumer()).start();
     }
 
@@ -69,6 +73,7 @@ public class TupleManager {
             System.out.println("--------  matches found. going to take take.......");
             Tuple toTake = matches.firstElement();
             tupleSpace.remove(toTake);
+
             System.out.println("############## tuple space size 2 : " + tupleSpace.tupleSize());
             try {
                 server.sendResultsNotificationToClient(toTake, Type.TAKE);
@@ -93,7 +98,8 @@ public class TupleManager {
             }
             System.out.println(".........................");
             System.out.println(".........................");
-            takeTuple(tupleToTake);
+            Tuple tupleTaken = takeTuple(tupleToTake);
+            logManager.writeLog(tupleTaken, Type.TAKE2.name(), StateManager.getInstance().getCurrentViewId());
         }
         System.out.println("take operation processed........");
     }
@@ -174,7 +180,8 @@ public class TupleManager {
                     System.out.println("found a match for a pending take. Try take again....");
                     Tuple tupleTaken = takeTuple(pendingTakeRequests.get(i));
                     if (tupleTaken != null) {
-                        server.sendResultsNotificationToClient(tupleTaken, Type.TAKE);
+                        logManager.writeLog(tupleTaken, Type.TAKE2.name(), StateManager.getInstance().getCurrentViewId());
+                        server.sendResultsNotificationToClient(tupleTaken, Type.TAKE2);
                         pendingTakeRequests.remove(pendingTakeRequests.get(i));
                     }
                 }
@@ -214,7 +221,8 @@ public class TupleManager {
                     Vector<Tuple> matchingTuples = getMatchingTuples(takeMsg.getTuple());
                     server.bcastMatchingTuplesForTake(matchingTuples, uuidOfTake);
                     while (!isResponsesComplete(uuidOfTake)) {
-                        //do nothing
+                        //do not
+                        Thread.sleep(2000);
                     }
                     //System.out.println("%%%%%%%%%%%% all responses received %%%%%%%%");
                     Vector<TakeResponseMessage> responses = takeResponses.get(uuidOfTake);
