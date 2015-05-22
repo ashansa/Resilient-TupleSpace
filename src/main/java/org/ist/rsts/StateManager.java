@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 public class StateManager {
 
     private static StateManager stateManager;
-    private int viewId = 0;
+    private int lastMajorityViewId = 0;
     private DataSession groupSession;
     private Service group;
     private Hashtable logRequests;
@@ -58,19 +58,19 @@ public class StateManager {
         return stateManager;
     }
 
-    public void setViewNumber(int viewId) {
-        this.viewId = viewId;
+    public void updateLastMajorityViewId(int viewId) {
+        this.lastMajorityViewId = viewId;
     }
 
     public int getCurrentViewId() {
-        return viewId;
+        return lastMajorityViewId;
     }
 
     public void sync(List<SocketAddress> memberList, int newId){
-        System.out.println("OLD...., NEW... : " + viewId + "," + newId);
-        if (viewId != newId - 1 && memberList.size()>1) { //I have not been in the last view. Need to transfer state
+        System.out.println("OLD...., NEW... : " + lastMajorityViewId + "," + newId);
+        if (lastMajorityViewId != newId - 1 && memberList.size()>1) { //I have not been in the last view. Need to transfer state
 
-            singleExecutor.execute(new SyncTask(memberList,viewId, newId));
+            singleExecutor.execute(new SyncTask(memberList, lastMajorityViewId, newId));
 
         } else {
             System.out.println("........... NO STATE TRANSFER needed......");
@@ -84,8 +84,8 @@ public class StateManager {
 //        if(memberList.contains(server.getLocalAddress())) {
 //            memberList.remove(server.getLocalAddress());
 //        }
-        System.out.println("OLD...., NEW... : " + viewId + "," + newId);
-        if (viewId != newId - 1 && memberList.size()>1) { //I have not been in the last view. Need to transfer state
+        System.out.println("OLD...., NEW... : " + lastMajorityViewId + "," + newId);
+        if (lastMajorityViewId != newId - 1 && memberList.size()>1) { //I have not been in the last view. Need to transfer state
             SocketAddress receiver = memberList.get(new Random().nextInt(memberList.size()));
             System.out.println("TODO.............. STATE TRANSFER....." + receiver.toString());
             requestLogs(receiver);
