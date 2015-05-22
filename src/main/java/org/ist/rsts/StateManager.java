@@ -1,6 +1,5 @@
 package org.ist.rsts;
 
-
 import net.sf.jgcs.DataSession;
 import net.sf.jgcs.Message;
 import net.sf.jgcs.Service;
@@ -68,33 +67,14 @@ public class StateManager {
 
     public void sync(List<SocketAddress> memberList, int newId){
         System.out.println("OLD...., NEW... : " + lastMajorityViewId + "," + newId);
-        if (lastMajorityViewId != newId - 1 && memberList.size()>1) { //I have not been in the last view. Need to transfer state
-
+        if (lastMajorityViewId != newId - 1 && memberList.size()>1) {
             singleExecutor.execute(new SyncTask(memberList, lastMajorityViewId, newId));
 
-        } else {
+        } else {//I have not been in the last view. Need to transfer state
             System.out.println("........... NO STATE TRANSFER needed......");
         }
 
     }
-
-    /*public void syncStates(List<SocketAddress> memberList, int newId) throws IOException, InterruptedException {
-
-        //removing my id from list
-//        if(memberList.contains(server.getLocalAddress())) {
-//            memberList.remove(server.getLocalAddress());
-//        }
-        System.out.println("OLD...., NEW... : " + lastMajorityViewId + "," + newId);
-        if (lastMajorityViewId != newId - 1 && memberList.size()>1) { //I have not been in the last view. Need to transfer state
-            SocketAddress receiver = memberList.get(new Random().nextInt(memberList.size()));
-            System.out.println("TODO.............. STATE TRANSFER....." + receiver.toString());
-            requestLogs(receiver);
-            System.out.println("Logs are requested");
-            mergeLogs();
-        } else {
-            System.out.println("........... NO STATE TRANSFER needed......");
-        }
-    }*/
 
     public void sendLogsToMerge(LogRequestMessage logRequestMessage) throws IOException {
         try {
@@ -111,7 +91,6 @@ public class StateManager {
         logRequestMsg.marshal();
         byte[] bytes = Constants.createMessageToSend(Constants.MessageType.LOG_RESPONSE, logRequestMsg.getByteArray());
         msg.setPayload(bytes);
-        System.out.println("vieeew "+requesterViewId);
         System.out.println("....... going to send log response to :" + sender);
         SocketAddress dest = new InetSocketAddress(sender.split(":")[0],Integer.valueOf(sender.split(":")[1]));
         System.out.println(dest);
@@ -120,7 +99,6 @@ public class StateManager {
 
     private void requestLogs(SocketAddress destination, int lastPresentViewId) throws IOException {
         SocketAddress mySocketAddress = server.getLocalAddress();
-        System.out.println("@@@@@@@@@ last present view id, local address ======" + lastPresentViewId+","+mySocketAddress);
         System.out.println(mySocketAddress.toString().replace("/", ""));
         LogRequestMessage logRequestMsg = new LogRequestMessage(lastPresentViewId, new StringBuffer(mySocketAddress.toString().replace("/", "")));
         logRequestMsg.setSenderAddress(mySocketAddress);
@@ -128,19 +106,13 @@ public class StateManager {
         logRequestMsg.marshal();
         byte[] bytes = Constants.createMessageToSend(Constants.MessageType.LOG_REQUEST, logRequestMsg.getByteArray());
         msg.setPayload(bytes);
-        System.out.println("Sending to====> "+destination);
+        System.out.println("Requesting logs from ====> "+destination);
         groupSession.send(msg, group, null,destination, null);
     }
 
     private void mergeLogs(int lastPresentViewId) throws InterruptedException {
-        System.out.println("Staring log merging and waiting on take");
+        System.out.println("Staring log merging and waiting on log response");
         LogResponseMessage responseMessage = blockingQueue.take();
-       /* String log = responseMessage.getLog();
-        String[] logs = log.split("\n");
-        for (String s : logs) {
-            updateTuples(s.trim());
-        }
-*/
 
         String myLastViewLog = null;
         try {
@@ -151,7 +123,6 @@ public class StateManager {
         }
         if(myLastViewLog != null) {
             //undo operations that he has done in his last view
-            //TODO: do this....
             undoOperation(myLastViewLog);
             logManager.clearLogFile(lastPresentViewId);
         }
@@ -159,7 +130,6 @@ public class StateManager {
         //apply operations taken received
         System.out.println("__________ received log from another__________ " + responseMessage);
         HashMap<Integer, String> logMap = responseMessage.getLogs();
-        System.out.println("___ log files ____" + logMap.size());
         for (Integer viewId : logMap.keySet()) {
             System.out.println("Id and log : " + viewId + ", " + logMap.get(viewId));
         }
@@ -186,13 +156,11 @@ public class StateManager {
 
                 //write to log
                 logManager.writeLog(tuple, operation, viewId);
-
             }
         }
     }
 
     private void undoOperation(String logString) {
-        System.out.println("&&&&&&&&&&&&&&&&&&&&&  undo last view operations &&&&&&&&&&&&&&&&&&&&& ");
         String[] logLines = logString.split("\n");
         for (String log : logLines) {
             //write:a,b,c
@@ -253,7 +221,7 @@ public class StateManager {
                 SocketAddress receiver = otherMembers.get(new Random().nextInt(otherMembers.size()));
                 System.out.println("TODO.............. STATE TRANSFER....." + receiver.toString());
                 requestLogs(receiver, lastPresentViewId);
-                System.out.println("Logs are requested");
+                System.out.println("Logs requested");
                 mergeLogs(lastPresentViewId);
             } catch (IOException e) {
                 e.printStackTrace();

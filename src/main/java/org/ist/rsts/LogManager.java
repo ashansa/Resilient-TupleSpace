@@ -33,7 +33,6 @@ public class LogManager {
             }
         } else {
             boolean dirCreated = logDirectory.mkdirs();
-            System.out.println("========== log dir created ======== " + dirCreated);
         }
     }
 
@@ -72,7 +71,6 @@ public class LogManager {
             this.tuple = msg.getTuple();
             this.operationType = msg.getType();
             this.viewId = viewId;
-            //this.logId = logId;
         }
 
         public LogWriteTask(int viewId, String logId, Tuple tuple, Type type, String logDirPath) {
@@ -80,7 +78,6 @@ public class LogManager {
             this.tuple = tuple;
             this.operationType = type;
             this.viewId = viewId;
-           // this.logId = logId;
         }
 
         @Override
@@ -94,6 +91,7 @@ public class LogManager {
                     logFile.createNewFile();
                 }
                 FileWriter writer = new FileWriter(logFile, true);
+                System.out.println("Writing to the log");
                 writeLog(tuple, operationType, writer);
 
             } catch (IOException e) {
