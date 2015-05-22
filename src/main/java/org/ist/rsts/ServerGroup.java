@@ -267,7 +267,7 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
             tupleMsg.marshal();
             byte[] bytes = Constants.createMessageToSend(Constants.MessageType.TUPLE, tupleMsg.getByteArray());
             msg.setPayload(bytes);
-            System.out.println("====== sending client request : BCAST......");
+            System.out.println("====== sending client request : BCAST......" + ((MembershipSession) control).getMembership().getMembershipList().size());
             groupSession.send(msg, group, null, null);
         } catch (IOException e) {
             e.printStackTrace();
@@ -342,7 +342,9 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
                 }
             }
 
-            StateManager.getInstance().setViewNumber(newViewId);
+            if(newViewId != 0)
+                StateManager.getInstance().setViewNumber(newViewId);
+
             System.out.println("@@@@@@@@@@@@@@@@@ now view Id : " + StateManager.getInstance().getCurrentViewId());
 
             membersInGroup = ((MembershipSession) control).getMembership().getMembershipList().size();
@@ -462,9 +464,18 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
 
         private void handleRquest(TupleMessage tupleMessage, SocketAddress addr) {
             try {
+                System.out.println("........... received tuple msg................");
+                System.out.println("........... going to unmarshal................");
                 tupleMessage.unmarshal();
+                System.out.println("...........  unmarshaled................");
 
-                if (addr.equals(control.getLocalAddress())) {
+                SocketAddress myAddress;
+                if(localAddress != null) {
+                     myAddress = localAddress;
+                } else {
+                    myAddress = control.getLocalAddress();
+                }
+                if (addr.equals(myAddress)) {
                     System.out.println("\tReceived request message. I'm the origin)");
                     System.out.println("tuple msg type in request : " + tupleMessage.getType());
                 } else {

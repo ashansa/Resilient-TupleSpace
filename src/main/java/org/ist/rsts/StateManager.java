@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 public class StateManager {
 
     private static StateManager stateManager;
-    private int viewId = -1;
+    private int viewId = 0;
     private DataSession groupSession;
     private Service group;
     private Hashtable logRequests;
