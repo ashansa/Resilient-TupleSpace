@@ -46,9 +46,6 @@
         <session name="multiplexer" sharing="global">
             <protocol>net.sf.appia.protocols.group.vsyncmultiplexer.VSyncMultiplexerLayer</protocol>
         </session>
-        <!--<session name="total" sharing="private">
-            <protocol>net.sf.appia.protocols.total.sequencer.TotalSequencerLayer</protocol>
-        </session>-->
         <session name="total" sharing="private">
             <protocol>net.sf.appia.protocols.total.seto.SETOLayer</protocol>
         </session>
@@ -100,9 +97,6 @@
         <session name="multiplexer" sharing="global">
             <protocol>net.sf.appia.protocols.group.vsyncmultiplexer.VSyncMultiplexerLayer</protocol>
         </session>
-        <!--<session name="total" sharing="private">
-            <protocol>net.sf.appia.protocols.total.sequencer.TotalSequencerLayer</protocol>
-        </session>-->
         <session name="uniform" sharing="private">
             <protocol>net.sf.appia.protocols.uniform.UniformLayer</protocol>
         </session>
