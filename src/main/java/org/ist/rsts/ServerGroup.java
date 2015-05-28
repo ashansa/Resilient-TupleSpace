@@ -14,6 +14,7 @@ import java.net.SocketAddress;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ServerGroup extends Thread implements ControlListener, ExceptionListener,
         MembershipListener, BlockListener {
@@ -161,11 +162,24 @@ public class ServerGroup extends Thread implements ControlListener, ExceptionLis
     public void isolate() {
         System.out.println("isolate received at Server");
         isIsolated = true;
+        membersInGroup = 1;
     }
 
     public void recover() {
         System.out.println("recover received at Server");
         isIsolated = false;
+    }
+
+    public void printStatus() {
+        System.out.println("\n \n #################### Tuple Status ##################");
+        TupleSpace tupleSpace = tupleManager.getTupleSpace();
+        CopyOnWriteArrayList<Tuple> tuples = tupleSpace.getTuples();
+        for (Tuple tuple : tuples) {
+            String[] values = tuple.getValues();
+            System.out.println(values[0] + ", " + values[1] + ", " + values[2]);
+        }
+        System.out.println("###############################################");
+
     }
 
     public int getMembersInGroup() {
