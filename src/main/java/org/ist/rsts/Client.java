@@ -97,10 +97,12 @@ public class Client extends Thread {
 
         }
 
-        System.out.println("================== RECEIVED RESULTS ====================");
-        String[] values = result.getValues();
-        System.out.println(values[0] + "," + values[1] + "," + values[2]);
-        System.out.println("========================================================");
+        if(result != null) {
+            System.out.println("================== RECEIVED RESULTS ====================");
+            String[] values = result.getValues();
+            System.out.println(values[0] + "," + values[1] + "," + values[2]);
+            System.out.println("========================================================");
+        }
     }
 
     public void isolateNode() {
@@ -109,6 +111,10 @@ public class Client extends Thread {
 
     public void recoverNode() {
         server.recover();
+    }
+
+    public void printStatus() {
+        server.printStatus();
     }
 
     public void run() {
@@ -132,6 +138,8 @@ public class Client extends Thread {
                         isolateNode();
                     } else  if (line.contains("recover")) {
                         recoverNode();
+                    } else if (line.contains("status")) {
+                        printStatus();
                     } else {
                         //splitting the line write:1,2,3
                         String[] values = line.split(":")[1].split(",");

@@ -43,4 +43,8 @@ public class TupleSpace {
     public int tupleSize() {
         return tuples.size();
     }
+
+    public CopyOnWriteArrayList<Tuple> getTuples() {
+        return tuples;
+    }
 }
