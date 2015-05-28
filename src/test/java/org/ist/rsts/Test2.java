@@ -26,7 +26,7 @@ public class Test2 {
     long takeTestTime;
     long writeTestTime;
 
-    int noOfNodes = 10;
+    int noOfNodes = 3;
     int noOfFailures = 0;
     ArrayList<ServerGroup> servers = new ArrayList<ServerGroup>();
     private long readTestTime;

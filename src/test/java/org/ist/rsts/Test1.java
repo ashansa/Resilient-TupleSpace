@@ -26,7 +26,7 @@ public class Test1 {
     long takeTestTime;
     long writeTestTime;
 
-    int noOfNodes = 10;
+    int noOfNodes = 3;
     ArrayList<ServerGroup> servers = new ArrayList<ServerGroup>();
     private long readTestTime;
 
@@ -82,7 +82,7 @@ public class Test1 {
         writeTest.start();
         System.out.println("....... write test started .........");
         TakeTest takeTest = new TakeTest( servers);
-        //takeTest.start();
+        takeTest.start();
         System.out.println("....... take test started .........");
 
         ReadTest readTest = new ReadTest( servers);
@@ -90,11 +90,11 @@ public class Test1 {
         System.out.println("....... read test started .........");
 
         writeTest.join();
-        //takeTest.join();
+        takeTest.join();
 
         readTest.join();
 
-        while (servers.get(0).getTupleSpace().tupleSize()!=100){
+        while (servers.get(0).getTupleSpace().tupleSize()!=50){
         }
 
 
@@ -106,7 +106,7 @@ public class Test1 {
         System.out.println("time for read " + readTestTime + "-" + readTestTime / 100);
 
        for (int i = 0; i <noOfNodes ; i++) {
-            Assert.assertEquals(100, servers.get(i).getTupleSpace().tupleSize());
+            Assert.assertEquals(50, servers.get(i).getTupleSpace().tupleSize());
             System.out.println("Tuple size in Server "+i +" "+ servers.get(i).getTupleSpace().tupleSize());
         }
 
